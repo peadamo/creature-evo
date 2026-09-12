@@ -31,6 +31,8 @@ class Genome:
         # Conectar cada bloque sensor/actuador/generador con una neurona aleatoria del banco,
         # para que haya señal fluyendo desde el arranque.
         for block_type, x, y in io_blocks:
+            if block_type in ('boca', 'almacenamiento'):
+                continue  # sin neuronas propias, nada que conectar
             if block_type == 'generador':
                 io_id = f"neuron_generador_{x}_{y}_output"
                 bank_neuron_id = f"neuron_banco_neuronal_{bank_x}_{bank_y}_{random.randint(0, num_bank_neurons - 1)}"

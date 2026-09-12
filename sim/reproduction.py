@@ -23,10 +23,12 @@ class Reproduction:
         }
         
         if random.random() < mutation_probabilities['add_block']:
-            block_type = random.choice(['sonar', 'actuador', 'generador'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             if block_type == 'generador':
                 params = {'output': 0.0}
+            elif block_type in ('boca', 'almacenamiento'):
+                params = {}
             else:
                 params = {'dx': 0.0, 'dy': 0.0}
             new_genome.add_block(block_type, x, y, params)
@@ -71,7 +73,7 @@ class Reproduction:
                         num_neurons = params.get('num_neurons', 0)
                         i = random.randint(0, num_neurons - 1)
                         origin_id = f"neuron_{block_type}_{x}_{y}_{i}"
-                    else:
+                    elif params:
                         param_key = random.choice(list(params.keys()))
                         origin_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
                 if block == dest_block:
@@ -79,7 +81,7 @@ class Reproduction:
                         num_neurons = params.get('num_neurons', 0)
                         i = random.randint(0, num_neurons - 1)
                         dest_id = f"neuron_{block_type}_{x}_{y}_{i}"
-                    else:
+                    elif params:
                         param_key = random.choice(list(params.keys()))
                         dest_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
             
