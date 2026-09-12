@@ -57,8 +57,10 @@ class World:
                     x, y = block[1], block[2]
                     io_id_dx = f"neuron_sonar_{x}_{y}_dx"
                     io_id_dy = f"neuron_sonar_{x}_{y}_dy"
-                    creature.neurons[io_id_dx] = dx
-                    creature.neurons[io_id_dy] = dy
+                    io_id_activo = f"neuron_sonar_{x}_{y}_activo"
+                    if creature.neurons.get(io_id_activo, 0) > 0:
+                        creature.neurons[io_id_dx] = dx
+                        creature.neurons[io_id_dy] = dy
 
     def log_summary(self, path='sim_log.csv'):
         import os

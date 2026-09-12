@@ -48,6 +48,10 @@ class Genome:
                     genome.add_connection(io_id_dy, bank_neuron_id, weight)
                     io_id_activo = f"neuron_sonar_{x}_{y}_activo"
                     genome.add_connection(bank_neuron_id, io_id_activo, weight)
+                    io_id_activo = f"neuron_sonar_{x}_{y}_activo"
+                    genome.add_connection(bank_neuron_id, io_id_activo, weight)
+                    io_id_activo = f"neuron_sonar_{x}_{y}_activo"
+                    genome.add_connection(bank_neuron_id, io_id_activo, weight)
                 else:
                     genome.add_connection(bank_neuron_id, io_id_dx, weight)
                     genome.add_connection(bank_neuron_id, io_id_dy, weight)
