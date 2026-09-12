@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 class Creature:
@@ -13,7 +15,9 @@ class Creature:
                 num_neurons = params.get('num_neurons', 0)
                 for i in range(num_neurons):
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{i}"
-                    self.neurons[neuron_id] = 0.0
+                    # Bias interno: sin esto todas las neuronas parten en 0 y
+                    # nunca hay señal, sin importar los pesos evolucionados.
+                    self.neurons[neuron_id] = random.uniform(-1.0, 1.0)
             else:
                 for param in params.keys():
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{param}"
