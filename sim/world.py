@@ -14,6 +14,7 @@ class World:
         self.physics = Physics()
         self.energy = Energy()
         self.reproduction = Reproduction()
+        self.tick_count = 0
 
     def spawn_creature(self, genome):
         creature = Creature(genome)
@@ -27,6 +28,7 @@ class World:
         del self.energy.energy_levels[creature_id]
 
     def tick(self):
+        self.tick_count += 1
         if len(self.creatures) < self.min_population:
             for _ in range(self.min_population - len(self.creatures)):
                 genome = Genome.random_initial()
