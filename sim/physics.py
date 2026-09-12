@@ -5,10 +5,13 @@ class Physics:
         self.grid_size = grid_size
         self.creatures = []
 
-    def add_creature(self, creature):
+    def add_creature(self, creature, position=None):
         import random
-        x = random.uniform(0, self.grid_size[0])
-        y = random.uniform(0, self.grid_size[1])
+        if position is None:
+            x = random.uniform(0, self.grid_size[0])
+            y = random.uniform(0, self.grid_size[1])
+        else:
+            x, y = position
         creature.position = (x, y)  # Asignar posición inicial aleatoria dentro de los límites del grid
         self.creatures.append(creature)
 

@@ -20,7 +20,7 @@ class World:
         self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(30)]
         self.fat_levels = {}
 
-    def spawn_creature(self, genome):
+    def spawn_creature(self, genome, position=None):
         creature = Creature(genome)
         self.creatures.append(creature)
         self.physics.add_creature(creature)
@@ -80,6 +80,57 @@ class World:
             if not os.path.exists(path) or os.stat(path).st_size == 0:
                 writer.writerow(headers)
             writer.writerow(data)
+    def tick_incubadoras(self):
+        import copy
+        
+        for creature in self.creatures:
+            for block_type, x, y, params in creature.genome.blocks:
+                if block_type == 'incubadora':
+                    invertir_value = creature.neurons.get(f'neuron_incubadora_{x}_{y}_invertir', 0)
+                    invertir_value = max(0.0, min(1.0, invertir_value))
+                    
+                    if invertir_value > 0 and self.energy.check_energy(id(creature)) > 0:
+                        consumed_fat = min(invertir_value * 5, self.energy.check_energy(id(creature)))
+                        self.energy.consume_energy(id(creature), consumed_fat)
+                        
+                        egg = self.creature_eggs.get(id(creature))
+                        if not egg:
+                            new_egg = {
+                                'x': creature.position[0],
+                                'y': creature.position[1],
+                                'progress': 0.0,
+                                'parent_genome': copy.deepcopy(creature.genome)
+                            }
+                            self.eggs.append(new_egg)
+                            self.creature_eggs[id(creature)] = new_egg
+                        else:
+                            egg['progress'] += consumed_fat * 0.02
+                        
+                        creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = min(1.0, egg['progress'])
+                    else:
+                        creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = 0.0
+        
+        # Predación de huevos
+        for egg in self.eggs[:]:
+            num_nearby_mouths = sum(1 for creature in self.creatures if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and 
+                                  ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0)
+            if num_nearby_mouths > 0:
+                egg['progress'] -= 0.1 * num_nearby_mouths
+                if egg['progress'] <= 0:
+                    self.eggs.remove(egg)
+                    del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
+                    for creature in self.creatures:
+                        if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and \
+                           ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0:
+                            self.energy.produce_energy(id(creature), 20)
+        
+        # Hachazón de huevos
+        for egg in self.eggs[:]:
+            if egg['progress'] >= 1.0:
+                new_genome = self.reproduction.mutate_genome(egg['parent_genome'])
+                self.spawn_creature(new_genome, (egg['x'], egg['y']))
+                self.eggs.remove(egg)
+                del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
 
     def apply_generators(self):
         for creature in self.creatures:

@@ -35,11 +35,14 @@ class Creature:
 
     def evaluate(self):
         # Pass A - Accumulate
+        edge_inputs = {}
         for (origin, dest), weight in self.connections.items():
             if dest in self.potentials:
                 self.potentials[dest] += self.neurons[origin] * weight
             else:
-                self.neurons[dest] = self.neurons[origin] * weight
+                edge_inputs[dest] = edge_inputs.get(dest, 0.0) + self.neurons[origin] * weight
+        for dest, value in edge_inputs.items():
+            self.neurons[dest] = value
 
         # Pass B - Fire and Leak
         for neuron_id, threshold in self.neuron_thresholds.items():
