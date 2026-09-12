@@ -12,7 +12,7 @@ class Genome:
         for _ in range(random.randint(1, 3)):
             block_type = random.choice(['sensor', 'actuador'])
             x, y = random.randint(0, 10), random.randint(0, 10)
-            params = {}
+            params = {'value': 0.0}
             genome.add_block(block_type, x, y, params)
         return genome
 

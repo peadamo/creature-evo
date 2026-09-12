@@ -33,7 +33,19 @@ class Reproduction:
             if non_core_blocks:
                 block_to_remove = random.choice(non_core_blocks)
                 new_genome.blocks.remove(block_to_remove)
-        
+
+                valid_ids = set()
+                for block_type, x, y, params in new_genome.blocks:
+                    if block_type == 'banco_neuronal':
+                        for i in range(params.get('num_neurons', 0)):
+                            valid_ids.add(f"neuron_{block_type}_{x}_{y}_{i}")
+                    else:
+                        for param_key in params.keys():
+                            valid_ids.add(f"neuron_{block_type}_{x}_{y}_{param_key}")
+                new_genome.connections = [
+                    c for c in new_genome.connections if c[0] in valid_ids and c[1] in valid_ids
+                ]
+
         if random.random() < mutation_probabilities['mutate_connection']:
             if new_genome.connections:
                 connection_to_mutate = random.choice(new_genome.connections)
@@ -42,7 +54,7 @@ class Reproduction:
                 index = new_genome.connections.index(connection_to_mutate)
                 new_genome.connections[index] = (origin, dest, new_weight, enabled)
         
-        if random.random() < mutation_probabilities['add_connection']:
+        if random.random() < mutation_probabilities['add_connection'] and len(new_genome.blocks) >= 2:
             origin_block, dest_block = random.sample(new_genome.blocks, 2)
             
             # Construir IDs de neuronas para los bloques seleccionados

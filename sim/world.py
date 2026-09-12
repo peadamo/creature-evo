@@ -45,12 +45,6 @@ class World:
             self.physics.update_positions()
             self.physics.handle_collisions()
 
-        # Reproducción
-        for creature in self.creatures[:]:
-            new_creature_genome = self.reproduction.reproduce(creature, 100)
-            if new_creature_genome:
-                self.spawn_creature(new_creature_genome)
-
         # Muerte por energía agotada
         for creature in self.creatures[:]:
             if self.energy.check_death(id(creature)):
