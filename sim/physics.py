@@ -13,11 +13,19 @@ class Physics:
         self.creatures.append(creature)
 
     def update_positions(self):
-        import random
         for creature in self.creatures:
             x, y = creature.position
-            dx = random.uniform(-1, 1) * 0.5  # Movimiento aleatorio en x
-            dy = random.uniform(-1, 1) * 0.5  # Movimiento aleatorio en y
+            actuator_outputs = creature.get_actuator_outputs()
+
+            if len(actuator_outputs) == 0:
+                dx, dy = 0, 0
+            elif len(actuator_outputs) == 1:
+                dx = actuator_outputs[0] * 0.5
+                dy = actuator_outputs[0] * 0.5
+            else:
+                avg_output = sum(actuator_outputs) / len(actuator_outputs)
+                dx = avg_output * 0.5
+                dy = avg_output * 0.5
 
             new_x = max(0, min(self.grid_size[0], x + dx))  # Asegurar que la nueva posición esté dentro de los límites del grid
             new_y = max(0, min(self.grid_size[1], y + dy))

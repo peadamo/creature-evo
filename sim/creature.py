@@ -30,3 +30,7 @@ class Creature:
         for (origin, dest), weight in self.connections.items():
             self.neurons[dest] += self.neurons[origin] * weight
             self.neurons[dest] = np.tanh(self.neurons[dest])
+
+    def get_actuator_outputs(self):
+        actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]
+        return actuator_outputs

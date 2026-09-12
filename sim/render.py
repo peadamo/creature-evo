@@ -19,8 +19,14 @@ class Renderer:
             screen_x = int(x * scale_x)
             screen_y = int(y * scale_y)
             num_blocks = len(creature.genome.blocks)
-            color_intensity = min(255, int(num_blocks * 10))  # Ajustar intensidad del color basado en el número de bloques
-            color = (color_intensity, color_intensity, color_intensity)  # Color gris más brillante con más bloques
+
+            # Convertir hue a RGB para colores más visibles
+            import colorsys
+            hue = (num_blocks * 30) % 360 / 360.0
+            saturation = 1.0
+            value = 1.0
+            r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
+            color = (int(r * 255), int(g * 255), int(b * 255))
 
             pygame.draw.circle(self.screen, color, (screen_x, screen_y), 5)  # Dibujar criatura como un círculo pequeño
 
