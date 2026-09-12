@@ -34,14 +34,14 @@ class World:
 
             for other_creature in self.creatures:
                 if id(other_creature) != id(creature):
-                    distance = np.linalg.norm(np.array([other_creature.x, other_creature.y]) - np.array([creature.x, creature.y]))
+                    distance = np.linalg.norm(np.array(other_creature.position) - np.array(creature.position))
                     if distance < nearest_distance:
                         nearest_distance = distance
                         nearest_creature = other_creature
 
             if nearest_creature:
-                dx = (nearest_creature.x - creature.x) / self.physics.grid_size[0]
-                dy = (nearest_creature.y - creature.y) / self.physics.grid_size[1]
+                dx = (nearest_creature.position[0] - creature.position[0]) / self.physics.grid_size[0]
+                dy = (nearest_creature.position[1] - creature.position[1]) / self.physics.grid_size[1]
             else:
                 dx, dy = 0.0, 0.0
 

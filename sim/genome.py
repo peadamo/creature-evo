@@ -27,11 +27,12 @@ class Genome:
             io_id_dy = f"neuron_{block_type}_{x}_{y}_dy"
             bank_neuron_id = f"neuron_banco_neuronal_{bank_x}_{bank_y}_{random.randint(0, num_bank_neurons - 1)}"
             weight = random.uniform(-1.0, 1.0)
-            if block_type == 'sensor':
+            if block_type == 'sonar':
                 genome.add_connection(io_id_dx, bank_neuron_id, weight)
                 genome.add_connection(io_id_dy, bank_neuron_id, weight)
             else:
-                genome.add_connection(bank_neuron_id, io_id, weight)
+                genome.add_connection(bank_neuron_id, io_id_dx, weight)
+                genome.add_connection(bank_neuron_id, io_id_dy, weight)
 
         return genome
 
