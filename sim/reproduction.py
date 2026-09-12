@@ -54,12 +54,24 @@ class Reproduction:
                 ]
 
         if random.random() < mutation_probabilities['mutate_connection']:
-            if new_genome.connections:
+            if new_genome.connections and random.random() >= 0.2:
                 connection_to_mutate = random.choice(new_genome.connections)
                 origin, dest, weight, enabled = connection_to_mutate
                 new_weight = weight + random.uniform(-0.1, 0.1)
                 index = new_genome.connections.index(connection_to_mutate)
                 new_genome.connections[index] = (origin, dest, new_weight, enabled)
+            else:
+                # Mutar un umbral de banco_neuronal
+                for block in new_genome.blocks:
+                    if block[0] == 'banco_neuronal':
+                        block_type, x, y, params = block
+                        thresholds = params['thresholds']
+                        neuron_index = random.randint(0, len(thresholds) - 1)
+                        new_threshold = max(0.05, thresholds[neuron_index] + random.uniform(-0.1, 0.1))
+                        thresholds[neuron_index] = new_threshold
+                        updated_params = {'num_neurons': params['num_neurons'], 'thresholds': thresholds}
+                        block_index = new_genome.blocks.index(block)
+                        new_genome.blocks[block_index] = (block_type, x, y, updated_params)
         
         if random.random() < mutation_probabilities['add_connection'] and len(new_genome.blocks) >= 2:
             origin_block, dest_block = random.sample(new_genome.blocks, 2)

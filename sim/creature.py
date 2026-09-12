@@ -17,7 +17,9 @@ class Creature:
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{i}"
                     # Bias interno: sin esto todas las neuronas parten en 0 y
                     # nunca hay señal, sin importar los pesos evolucionados.
-                    self.neurons[neuron_id] = random.uniform(-1.0, 1.0)
+                    self.neurons[neuron_id] = 0.0
+                    self.potentials[neuron_id] = 0.0
+                    self.neuron_thresholds[neuron_id] = params['thresholds'][i]
             else:
                 for param in params.keys():
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{param}"
@@ -30,10 +32,21 @@ class Creature:
                 self.connections[(origin, dest)] = weight
 
     def evaluate(self):
-        # Evaluar el grafo neuronal (simplificado)
+        # Pass A - Accumulate
         for (origin, dest), weight in self.connections.items():
-            self.neurons[dest] += self.neurons[origin] * weight
-            self.neurons[dest] = np.tanh(self.neurons[dest])
+            if dest in self.potentials:
+                self.potentials[dest] += self.neurons[origin] * weight
+            else:
+                self.neurons[dest] = self.neurons[origin] * weight
+
+        # Pass B - Fire and Leak
+        for neuron_id, threshold in self.neuron_thresholds.items():
+            self.potentials[neuron_id] *= 0.8
+            if self.potentials[neuron_id] > threshold:
+                self.neurons[neuron_id] = 1.0
+                self.potentials[neuron_id] = 0.0
+            else:
+                self.neurons[neuron_id] = 0.0
 
     def get_actuator_outputs(self):
         actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]
