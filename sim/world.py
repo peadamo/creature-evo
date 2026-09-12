@@ -18,6 +18,8 @@ class World:
         self.reproduction = Reproduction()
         self.tick_count = 0
         self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(30)]
+        self.eggs = []
+        self.creature_eggs = {}
         self.fat_levels = {}
 
     def spawn_creature(self, genome, position=None):
