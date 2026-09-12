@@ -29,9 +29,15 @@ class World:
     def tick(self):
         if len(self.creatures) < self.min_population:
             for _ in range(self.min_population - len(self.creatures)):
-                genome = Genome()
-                # Aquí deberías agregar bloques aleatorios al genoma, pero por ahora lo dejamos vacío
+                genome = Genome.random_initial()
                 self.spawn_creature(genome)
+
+        # Reproducción
+        for creature in self.creatures[:]:
+            new_genome = self.reproduction.reproduce(creature.genome, self.energy.energy_levels[id(creature)], 100)
+            if new_genome:
+                self.spawn_creature(new_genome)
+                self.energy.consume_energy(id(creature), 5)  # Costo de reproducción
 
         # Actualizar energía y consumo
         for creature in self.creatures:
