@@ -1,4 +1,8 @@
 import numpy as np
+from sim.creature import Creature
+from sim.physics import Physics
+from sim.energy import Energy
+from sim.reproduction import Reproduction
 
 class World:
     def __init__(self, min_population=20, max_population=50):
@@ -29,9 +33,9 @@ class World:
 
         # Reproducción
         for creature in self.creatures[:]:
-            if self.reproduction.reproduce(creature, 100):
-                new_creature = self.reproduction.reproduce(creature, 100)
-                self.spawn_creature(new_creature.genome)
+            new_creature_genome = self.reproduction.reproduce(creature, 100)
+            if new_creature_genome:
+                self.spawn_creature(new_creature_genome)
 
         # Muerte por energía agotada
         for creature in self.creatures[:]:
