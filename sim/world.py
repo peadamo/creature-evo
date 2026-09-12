@@ -25,7 +25,7 @@ class World:
     def spawn_creature(self, genome, position=None):
         creature = Creature(genome)
         self.creatures.append(creature)
-        self.physics.add_creature(creature)
+        self.physics.add_creature(creature, position)
         self.energy.add_creature(id(creature))
         self.fat_levels[id(creature)] = 0
 
@@ -33,6 +33,10 @@ class World:
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
         del self.energy.energy_levels[creature_id]
+        self.fat_levels.pop(creature_id, None)
+        egg = self.creature_eggs.pop(creature_id, None)
+        if egg in self.eggs:
+            self.eggs.remove(egg)
         if creature_id in self.fat_levels:
             del self.fat_levels[creature_id]
 
@@ -91,9 +95,10 @@ class World:
                     invertir_value = creature.neurons.get(f'neuron_incubadora_{x}_{y}_invertir', 0)
                     invertir_value = max(0.0, min(1.0, invertir_value))
                     
-                    if invertir_value > 0 and self.energy.check_energy(id(creature)) > 0:
-                        consumed_fat = min(invertir_value * 5, self.energy.check_energy(id(creature)))
-                        self.energy.consume_energy(id(creature), consumed_fat)
+                    available_fat = self.fat_levels.get(id(creature), 0)
+                    if invertir_value > 0 and available_fat > 0:
+                        consumed_fat = min(invertir_value * 5, available_fat)
+                        self.fat_levels[id(creature)] -= consumed_fat
                         
                         egg = self.creature_eggs.get(id(creature))
                         if not egg:
@@ -124,7 +129,7 @@ class World:
                     for creature in self.creatures:
                         if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and \
                            ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0:
-                            self.energy.produce_energy(id(creature), 20)
+                            self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + 20
         
         # Hachazón de huevos
         for egg in self.eggs[:]:
@@ -206,14 +211,7 @@ class World:
 
             self.energy.consume_energy(id(creature), cost)
 
-        # Reproducción
-        for creature in self.creatures[:]:
-            if len(self.creatures) >= self.max_population:
-                break
-            new_genome = self.reproduction.reproduce(creature.genome, self.energy.energy_levels[id(creature)], 100)
-            if new_genome:
-                self.spawn_creature(new_genome)
-                self.energy.consume_energy(id(creature), 5)  # Costo de reproducción
+        # Reproducción ahora sucede solo vía incubadora/huevos (tick_incubadoras)
 
         # Actualizar energía y consumo
         for creature in self.creatures:

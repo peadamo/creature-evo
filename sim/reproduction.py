@@ -23,7 +23,7 @@ class Reproduction:
         }
         
         if random.random() < mutation_probabilities['add_block']:
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             if block_type == 'generador':
                 params = {'output': 0.0}
@@ -31,6 +31,8 @@ class Reproduction:
                 params = {}
             elif block_type == 'sonar':
                 params = {'dx': 0.0, 'dy': 0.0, 'activo': 0.0}
+            elif block_type == 'incubadora':
+                params = {'desarrollo': 0.0, 'invertir': 0.0}
             else:
                 params = {'dx': 0.0, 'dy': 0.0}
             new_genome.add_block(block_type, x, y, params)

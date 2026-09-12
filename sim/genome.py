@@ -15,7 +15,7 @@ class Genome:
 
         io_blocks = []
         for _ in range(random.randint(1, 3)):
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             params = {}
             if block_type == 'sonar':
@@ -24,6 +24,8 @@ class Genome:
                 params = {'dx': 0.0, 'dy': 0.0}
             elif block_type in ['boca', 'almacenamiento']:
                 params = {}
+            elif block_type == 'incubadora':
+                params = {'desarrollo': 0.0, 'invertir': 0.0}
             elif block_type == 'generador':
                 params = {'output': 0.0}
             genome.add_block(block_type, x, y, params)
@@ -32,7 +34,7 @@ class Genome:
         # Conectar cada bloque sensor/actuador/generador con una neurona aleatoria del banco,
         # para que haya señal fluyendo desde el arranque.
         for block_type, x, y in io_blocks:
-            if block_type in ('boca', 'almacenamiento'):
+            if block_type in ('boca', 'almacenamiento', 'incubadora'):
                 continue  # sin neuronas propias, nada que conectar
             if block_type == 'generador':
                 io_id = f"neuron_generador_{x}_{y}_output"
