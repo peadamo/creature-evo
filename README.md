@@ -8,7 +8,9 @@ Explore whether an open-ended body+brain co-evolution system can satisfy the bio
 
 ## Status
 
-Early design phase. No simulation code yet.
+Working CPU prototype in `sim/` (numpy + pygame). See [docs/design.md](docs/design.md) section 8 for the living roadmap: what's implemented, what's designed but pending, and the backlog of conceptual ideas.
+
+Run it: `python -m sim.main <ticks>` (headless) or `python -m sim.main <ticks> --visual` (pygame window).
 
 ## Stack (planned)
 
@@ -18,5 +20,5 @@ Early design phase. No simulation code yet.
 
 ## Layout
 
-- `docs/` — design docs (genome spec, physics model, evolution loop) written before implementation
-- `sim/` — simulation engine (not yet started)
+- `docs/` — design docs, including the living roadmap in `docs/design.md`
+- `sim/` — simulation engine (genome, creature/brain, physics, energy, reproduction, world loop, render)
