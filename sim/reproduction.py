@@ -1,7 +1,6 @@
 import copy
 import random
 
-import copy
 from sim.genome import Genome
 
 class Reproduction:
@@ -44,10 +43,34 @@ class Reproduction:
                 new_genome.connections[index] = (origin, dest, new_weight, enabled)
         
         if random.random() < mutation_probabilities['add_connection']:
-            origin = random.randint(0, len(new_genome.blocks) - 1)
-            dest = random.randint(0, len(new_genome.blocks) - 1)
-            weight = random.uniform(-1.0, 1.0)
-            new_genome.add_connection(origin, dest, weight)
+            origin_block, dest_block = random.sample(new_genome.blocks, 2)
+            
+            # Construir IDs de neuronas para los bloques seleccionados
+            origin_id = None
+            dest_id = None
+            
+            for block in new_genome.blocks:
+                block_type, x, y, params = block
+                if block == origin_block:
+                    if block_type == 'banco_neuronal':
+                        num_neurons = params.get('num_neurons', 0)
+                        i = random.randint(0, num_neurons - 1)
+                        origin_id = f"neuron_{block_type}_{x}_{y}_{i}"
+                    else:
+                        param_key = random.choice(list(params.keys()))
+                        origin_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
+                if block == dest_block:
+                    if block_type == 'banco_neuronal':
+                        num_neurons = params.get('num_neurons', 0)
+                        i = random.randint(0, num_neurons - 1)
+                        dest_id = f"neuron_{block_type}_{x}_{y}_{i}"
+                    else:
+                        param_key = random.choice(list(params.keys()))
+                        dest_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
+            
+            if origin_id and dest_id:
+                weight = random.uniform(-1.0, 1.0)
+                new_genome.add_connection(origin_id, dest_id, weight)
         
         return new_genome
 
@@ -73,7 +96,14 @@ class Reproduction:
         
         # Combinar bloques (puedes ajustar esto según tus necesidades)
         all_blocks = parent1.blocks + parent2.blocks
-        unique_blocks = list(set(all_blocks))
+        unique_blocks_dict = {}
+        for block in all_blocks:
+            block_type, x, y, _ = block
+            key = (block_type, x, y)
+            if key not in unique_blocks_dict:
+                unique_blocks_dict[key] = block
+        
+        unique_blocks = list(unique_blocks_dict.values())
         for block in unique_blocks:
             new_genome.add_block(*block)
         
