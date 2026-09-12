@@ -81,9 +81,13 @@ class World:
 
     def apply_generators(self):
         for creature in self.creatures:
+            available_fat = self.fat_levels.get(id(creature), 0)
             for block in creature.genome.blocks:
                 if block[0] == 'generador':
-                    self.energy.produce_energy(id(creature), 2)  # Producción de energía por generador
+                    consumed_fat = min(3, available_fat)
+                    produced_amount = consumed_fat * (2/3)
+                    self.energy.produce_energy(id(creature), produced_amount)
+                    self.fat_levels[id(creature)] -= consumed_fat
 
     def absorb_food(self):
         for creature in self.creatures:
