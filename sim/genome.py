@@ -20,7 +20,7 @@ class Genome:
             if block_type == 'sonar':
                 params = {'dx': 0.0, 'dy': 0.0}
             elif block_type == 'actuador':
-                params = {'direction': random.choice(['up', 'down', 'left', 'right'])}
+                params = {'dx': 0.0, 'dy': 0.0}
             elif block_type == 'generador':
                 params = {'output': 0.0}
             genome.add_block(block_type, x, y, params)
@@ -30,7 +30,7 @@ class Genome:
         # para que haya señal fluyendo desde el arranque.
         for block_type, x, y in io_blocks:
             if block_type == 'generador':
-                io_id = f"neuron_generador_{x}_{y}"
+                io_id = f"neuron_generador_{x}_{y}_output"
                 bank_neuron_id = f"neuron_banco_neuronal_{bank_x}_{bank_y}_{random.randint(0, num_bank_neurons - 1)}"
                 weight = random.uniform(-1.0, 1.0)
                 genome.add_connection(io_id, bank_neuron_id, weight)

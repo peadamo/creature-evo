@@ -23,9 +23,12 @@ class Reproduction:
         }
         
         if random.random() < mutation_probabilities['add_block']:
-            block_type = random.choice(['banco_neuronal', 'sensor', 'actuador'])
+            block_type = random.choice(['sonar', 'actuador', 'generador'])
             x, y = random.randint(0, 10), random.randint(0, 10)
-            params = {'num_neurons': random.randint(1, 5)}
+            if block_type == 'generador':
+                params = {'output': 0.0}
+            else:
+                params = {'dx': 0.0, 'dy': 0.0}
             new_genome.add_block(block_type, x, y, params)
         
         if random.random() < mutation_probabilities['remove_block']:
