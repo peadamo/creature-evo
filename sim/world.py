@@ -24,7 +24,16 @@ class World:
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
         del self.energy.energy_levels[creature_id]
 
+    import random
+    from sim.genome import Genome
+
     def tick(self):
+        if len(self.creatures) < self.min_population:
+            for _ in range(self.min_population - len(self.creatures)):
+                genome = Genome()
+                # Aquí deberías agregar bloques aleatorios al genoma, pero por ahora lo dejamos vacío
+                world.spawn_creature(genome)
+
         # Actualizar energía y consumo
         for creature in self.creatures:
             creature.evaluate()
