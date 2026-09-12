@@ -73,6 +73,12 @@ class World:
                 writer.writerow(headers)
             writer.writerow(data)
 
+    def apply_generators(self):
+        for creature in self.creatures:
+            for block in creature.genome.blocks:
+                if block[0] == 'generador':
+                    self.energy.produce_energy(id(creature), 2)  # Producción de energía por generador
+
     def tick(self):
         self.tick_count += 1
         if len(self.creatures) < self.min_population:
@@ -82,6 +88,14 @@ class World:
 
         # Actualizar sensores
         self.update_sensors()
+
+        # Aplicar generadores
+        self.apply_generators()
+
+        # Consumo de energía por mantenimiento
+        for creature in self.creatures:
+            cost = 1 + 0.5 * len(creature.genome.blocks)
+            self.energy.consume_energy(id(creature), cost)
 
         # Reproducción
         for creature in self.creatures[:]:
