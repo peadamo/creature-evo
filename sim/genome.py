@@ -14,13 +14,15 @@ class Genome:
 
         io_blocks = []
         for _ in range(random.randint(1, 3)):
-            block_type = random.choice(['sonar', 'actuador', 'generador'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             params = {}
             if block_type == 'sonar':
                 params = {'dx': 0.0, 'dy': 0.0}
             elif block_type == 'actuador':
                 params = {'dx': 0.0, 'dy': 0.0}
+            elif block_type in ['boca', 'almacenamiento']:
+                params = {}
             elif block_type == 'generador':
                 params = {'output': 0.0}
             genome.add_block(block_type, x, y, params)

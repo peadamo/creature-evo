@@ -9,6 +9,7 @@ import csv
 
 class World:
     def __init__(self, min_population=20, max_population=50):
+        import random
         self.min_population = min_population
         self.max_population = max_population
         self.creatures = []
@@ -16,17 +17,22 @@ class World:
         self.energy = Energy()
         self.reproduction = Reproduction()
         self.tick_count = 0
+        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(30)]
+        self.fat_levels = {}
 
     def spawn_creature(self, genome):
         creature = Creature(genome)
         self.creatures.append(creature)
         self.physics.add_creature(creature)
         self.energy.add_creature(id(creature))
+        self.fat_levels[id(creature)] = 0
 
     def kill_creature(self, creature_id):
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
         del self.energy.energy_levels[creature_id]
+        if creature_id in self.fat_levels:
+            del self.fat_levels[creature_id]
 
     def update_sensors(self):
         for creature in self.creatures:
@@ -79,6 +85,25 @@ class World:
                 if block[0] == 'generador':
                     self.energy.produce_energy(id(creature), 2)  # Producción de energía por generador
 
+    def absorb_food(self):
+        for creature in self.creatures:
+            for block in creature.genome.blocks:
+                if block[0] == 'boca':
+                    nearest_distance = float('inf')
+                    nearest_pellet = None
+                    for pellet in self.food_pellets:
+                        distance = np.linalg.norm(np.array([pellet['x'], pellet['y']]) - np.array(creature.position))
+                        if distance < nearest_distance and distance <= 2.0:
+                            nearest_distance = distance
+                            nearest_pellet = pellet
+
+                    if nearest_pellet:
+                        absorbed_amount = min(5, nearest_pellet['amount'])
+                        self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + absorbed_amount
+                        nearest_pellet['amount'] -= absorbed_amount
+                        if nearest_pellet['amount'] <= 0:
+                            self.food_pellets.remove(nearest_pellet)
+
     def tick(self):
         self.tick_count += 1
         if len(self.creatures) < self.min_population:
@@ -88,6 +113,9 @@ class World:
 
         # Actualizar sensores
         self.update_sensors()
+
+        # Absorber comida
+        self.absorb_food()
 
         # Aplicar generadores
         self.apply_generators()
@@ -141,6 +169,10 @@ class World:
 
         if self.tick_count % 20 == 0:
             self.log_summary()
+
+        if self.tick_count % 200 == 0 and len(self.food_pellets) < 10:
+            for _ in range(10):
+                self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)})
 
     def run(self, num_ticks):
         for _ in range(num_ticks):
