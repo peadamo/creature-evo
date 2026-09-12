@@ -5,6 +5,7 @@ from sim.energy import Energy
 from sim.reproduction import Reproduction
 import random
 from sim.genome import Genome
+import csv
 
 class World:
     def __init__(self, min_population=20, max_population=50):
@@ -53,6 +54,25 @@ class World:
                     creature.neurons[io_id_dx] = dx
                     creature.neurons[io_id_dy] = dy
 
+    def log_summary(self, path='sim_log.csv'):
+        import os
+        headers = ['tick_count', 'population_count', 'avg_blocks_per_creature', 'avg_connections_per_creature', 'avg_energy_level', 'min_energy', 'max_energy']
+        data = [
+            self.tick_count,
+            len(self.creatures),
+            np.mean([len(c.genome.blocks) for c in self.creatures]) if self.creatures else 0,
+            np.mean([len(c.connections) for c in self.creatures]) if self.creatures else 0,
+            np.mean(list(self.energy.energy_levels.values())) if self.energy.energy_levels else 0,
+            min(self.energy.energy_levels.values()) if self.energy.energy_levels else 0,
+            max(self.energy.energy_levels.values()) if self.energy.energy_levels else 0
+        ]
+
+        with open(path, 'a', newline='') as file:
+            writer = csv.writer(file)
+            if not os.path.exists(path) or os.stat(path).st_size == 0:
+                writer.writerow(headers)
+            writer.writerow(data)
+
     def tick(self):
         self.tick_count += 1
         if len(self.creatures) < self.min_population:
@@ -82,6 +102,9 @@ class World:
         for creature in self.creatures[:]:
             if self.energy.check_death(id(creature)):
                 self.kill_creature(id(creature))
+
+        if self.tick_count % 20 == 0:
+            self.log_summary()
 
     def run(self, num_ticks):
         for _ in range(num_ticks):

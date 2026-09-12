@@ -6,3 +6,4 @@ venv/
 .pytest_cache/
 .aider*
 *.log
+sim_log.csv
