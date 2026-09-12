@@ -7,6 +7,8 @@ class Creature:
         self.genome = genome
         self.neurons = {}
         self.connections = {}
+        self.potentials = {}
+        self.neuron_thresholds = {}
 
         # Crear neuronas de borde y libres
         for block in self.genome.blocks:
