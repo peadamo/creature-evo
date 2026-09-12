@@ -92,9 +92,31 @@ class World:
         # Aplicar generadores
         self.apply_generators()
 
-        # Consumo de energía por mantenimiento
+
+        # Consumo de energía por mantenimiento según tipo de bloque
         for creature in self.creatures:
-            cost = 1 + 0.5 * len(creature.genome.blocks)
+            cost = 0.0
+            for block in creature.genome.blocks:
+                block_type, x, y, params = block
+                if block_type == 'banco_neuronal':
+                    num_neurons = params.get('num_neurons', 0)
+                    cost += 0.5 * num_neurons
+                elif block_type == 'sonar':
+                    io_id_activo = f"neuron_sonar_{x}_{y}_activo"
+                    if creature.neurons.get(io_id_activo, 0) > 0:
+                        cost += 0.3
+                elif block_type == 'actuador':
+                    dx = creature.neurons.get(f"neuron_actuador_{x}_{y}_dx", 0)
+                    dy = creature.neurons.get(f"neuron_actuador_{x}_{y}_dy", 0)
+                    magnitude = np.sqrt(dx**2 + dy**2)
+                    cost += 2 * magnitude
+                elif block_type == 'almacenamiento':
+                    pass  # No tiene costo
+                elif block_type == 'generador':
+                    pass  # Costo gestionado en apply_generators
+                elif block_type == 'boca':
+                    pass  # No tiene costo
+
             self.energy.consume_energy(id(creature), cost)
 
         # Reproducción
