@@ -103,13 +103,15 @@ A diferencia de versiones tempranas del prototipo, hoy **sí hay muerte real por
 
 `World.log_summary()` escribe cada 20 ticks una fila a `sim_log.csv` (gitignored, no versionado) con: tick, población, bloques/conexiones promedio, energía avg/min/max. Solo agregados, nunca detalle por criatura — para inspección liviana sin inflar contexto.
 
-### 8.6 Ciclo de vida — reproducción pasa a ser decisión activa (diseñado, no implementado)
+### 8.6 Ciclo de vida — reproducción vía incubadora (implementado)
 
-Reemplaza el modelo actual (reproducción automática al llegar a un umbral fijo de energía). Nuevo bloque `incubadora`:
+Reemplazó por completo el modelo viejo (reproducción automática al llegar a un umbral fijo de energía — ese código fue eliminado). Bloque `incubadora`:
 
-- **Input**: nivel de desarrollo del huevo actual (0 si no hay huevo en curso).
-- **Output**: cuánto alimento/energía invertir en el huevo este tick — la criatura decide activamente cuánta de su grasa/energía reservar para reproducirse vs. quedarse con ella, en vez de reproducirse automáticamente apenas cruza un umbral.
-- Pendiente de definir antes de implementar: ¿el huevo es una entidad separada en el mapa (con su propia posición, vulnerable a ser comido/atacado) o vive "dentro" del bloque hasta eclosionar? ¿Hay un mínimo de desarrollo para que el huevo sea viable si el padre muere antes de terminarlo?
+- **Input** `desarrollo`: progreso del huevo actual (0 si no hay huevo en curso).
+- **Output** `invertir`: cuánta grasa (`fat_levels`) invertir en el huevo este tick — la criatura decide activamente cuánto reservar para reproducirse vs. quedarse con ella.
+- **El huevo es una entidad separada en el mapa** (`World.eggs`), con su propia posición (la del padre al momento de ponerlo) — no vive "dentro" del bloque. Es vulnerable: cualquier criatura con `boca` cerca lo puede depredar (reduce su progreso, y si llega a 0 el huevo se destruye y el depredador gana grasa).
+- Al llegar a `progress >= 1.0`, eclosiona: nace una cría (genoma del padre + mutación) en la posición del huevo.
+- Como `incubadora` no se cablea automáticamente al banco neuronal al nacer (igual que boca/almacenamiento), una criatura recién generada nunca invierte nada hasta que una mutación posterior conecte esa neurona — la reproducción efectiva es rara al principio y depende de que la evolución "descubra" el cableado. Es esperado, no un bug.
 
 ### 8.7 Ideas registradas para más adelante (no priorizadas)
 
