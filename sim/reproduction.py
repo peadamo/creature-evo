@@ -1,6 +1,9 @@
 import copy
 import random
 
+import copy
+from sim.genome import Genome
+
 class Reproduction:
     def __init__(self):
         self.innovation_id = 0
@@ -8,8 +11,6 @@ class Reproduction:
     def get_innovation_id(self):
         self.innovation_id += 1
         return self.innovation_id
-
-    import copy
 
     def mutate_genome(self, genome):
         new_genome = copy.deepcopy(genome)
