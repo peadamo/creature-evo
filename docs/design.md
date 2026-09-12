@@ -1,6 +1,6 @@
 # Diseño técnico — creature-evo
 
-Estado: diseño inicial, sin implementación. Este documento es la fuente de verdad para Aider/el agente local antes de escribir código. Cualquier cambio de diseño se edita acá primero.
+Estado: prototipo CPU funcional en `sim/` (numpy + pygame), implementando un subconjunto de este diseño. Este documento es la fuente de verdad conceptual — cuando el diseño avanza en las charlas, se vuelca acá antes (o en paralelo) de mandarlo a implementar. La sección 8 lleva el inventario de qué está implementado vs. pendiente.
 
 ## 1. Objetivo filosófico
 
@@ -51,8 +51,7 @@ Decisión de arquitectura explícita: priorizar cantidad de individuos y complej
 
 ## 6. Preguntas abiertas para iteración 2 (no bloquean el arranque)
 
-- Reproducción sexual vs. asexual (o ambas, según proximidad/especie)
-- Cómo se relaciona el sensor "visión" con el resto de naves (raycasting discreto en grilla vs. campo de proximidad)
+- Reproducción sexual vs. asexual (o ambas, según proximidad/especie) — **actualizado en sección 8.6**: reproducción va a dejar de ser automática y pasar por bloque `incubadora`
 - Si hay especiación (nichos que no cruzan) o población única
 - Formato exacto de serialización del genoma (para guardar/cargar/inspeccionar individuos)
 
@@ -62,3 +61,59 @@ Prototipo mínimo (no GPU todavía) para validar el ciclo completo con població
 sensar → red de neuronas (grafo NEAT-like) → actuar (motores/armas) → daño por bloque → energía → muerte/reproducción asíncrona.
 
 Una vez que ese ciclo funciona y se ve comportamiento evolutivo mínimo, se migra el núcleo de cómputo (evaluación de redes + física) a Taichi/Warp en fp16/SoA para escalar.
+
+## 8. Estado real del prototipo (actualizado en vivo)
+
+Nota de arquitectura clave descubierta durante la implementación, que reemplaza lo dicho en la sección 2 sobre geometría de bloques: **no hay geometría espacial por bloque, ni rotación, ni colisión física real** (a diferencia de lo planteado inicialmente con Cosmoteer). Los bloques son puramente lógicos — como en el juego de programar creeps en JS (Screeps): un bloque "es" lo que su código hace, no una forma dibujada en el espacio. Cada criatura tiene una única posición global (un punto); el arma, la boca, el sonar, etc. actúan por distancia lógica a ese punto, y el arma elige a qué *tipo* de bloque de la víctima atacar (no a qué posición). Esto simplifica todo el sistema de física y es una decisión de diseño definitiva, no un parche temporal.
+
+### 8.1 Bloques implementados
+
+| Bloque | Neuronas | Costo energético/tick | Función |
+|---|---|---|---|
+| `banco_neuronal` | N internas (integrate-and-fire, ver 8.3) | `0.5 × num_neuronas` | Cómputo interno, "pensamiento" |
+| `sonar` | `dx`, `dy` (input), `activo` (output) | `0.3` si `activo > 0`, si no `0` | Detecta dx/dy normalizado al vecino más cercano, solo si está encendido |
+| `actuador` | `dx`, `dy` (output) | `2 × magnitud_movimiento` | Mueve la nave (physics.py promedia todos los actuadores) |
+| `generador` | `output` (input al banco) | `0` propio | Consume grasa (`almacenamiento`) a razón de 3/tick, produce energía a razón 2:3 (con pérdida) |
+| `boca` | ninguna | `0` | Absorbe hasta 5/tick de un pellet de comida en rango 2.0, lo suma a la reserva de grasa de la criatura |
+| `almacenamiento` | ninguna | `0` | Reserva de "grasa" que consume el generador — hoy es un contador global por criatura (`World.fat_levels`), no todavía HP/capacidad por bloque individual |
+
+Pendientes de implementar: `casco`/escudo (HP pasivo sin función activa), `arma` (ver 8.2), `incubadora` (ver 8.6).
+
+### 8.2 Arma (diseñada, no implementada aún)
+
+Ataque de contacto lógico (sin proyectil, sin geometría): cada tick, si la distancia entre dos criaturas es menor a un umbral, la que tiene bloque `arma` puede dañar a la otra. El arma tiene un **output que elige qué tipo de bloque atacar** en la víctima (discretiza su valor continuo en categorías de tipo de bloque — ej. "atacar banco_neuronal" para intentar matar el cerebro directo, en vez de daño genérico). Si la víctima no tiene un bloque de ese tipo, el daño cae en uno al azar. HP por bloque (mencionado en sección 2) sigue pendiente de tabla de valores concreta — la idea es que bloques "sensibles" (banco neuronal) tengan poco HP y futuros bloques de blindaje tengan mucho.
+
+Al destruirse un bloque, deja un pellet de comida en esa posición equivalente a su valor energético (conecta el combate con el sistema de comida/boca ya implementado).
+
+### 8.3 Cerebro: integrate-and-fire con umbral evolutivo (reemplaza la propagación simple original)
+
+Cambio de arquitectura respecto a la sección 3 original: las neuronas del `banco_neuronal` ya no evalúan con un simple `tanh` instantáneo. Ahora:
+
+- Cada neurona del banco tiene un **potencial acumulado que persiste entre ticks**, y un **umbral propio evolutivo** (gen heredable, mutable — no fijo).
+- Cada tick: `potencial = potencial_anterior × 0.8 (fuga) + suma_de_entradas_ponderadas`.
+- Si `potencial > umbral`: la neurona dispara (emite 1 ese tick, resetea potencial a 0). Si no, emite 0 y el potencial sigue acumulando/decayendo.
+- Consecuencia deliberada: una señal que viaja sensor → banco → actuador tarda **como mínimo 2 ticks** en llegar de punta a punta (una pasada de evaluación por tick sobre todas las conexiones, sin reordenar por capas) — hay un "tiempo de reacción" natural según cuántos saltos tenga el camino.
+- Las neuronas de **borde** (sensor, actuador) deliberadamente NO tienen esta dinámica — son interfaz directa con el mundo físico (pasan el valor de este tick sin memoria propia), para no distorsionar lecturas de sensores ni retrasar la salida motora con una inercia aparte de la decisión de la red.
+
+### 8.4 Selección natural: ya activa
+
+A diferencia de versiones tempranas del prototipo, hoy **sí hay muerte real por falta de energía** (metabolismo por tipo de bloque + generador que depende de grasa acumulada, no energía gratis). Población fluctúa en vez de crecer sin freno.
+
+### 8.5 Logging de diagnóstico
+
+`World.log_summary()` escribe cada 20 ticks una fila a `sim_log.csv` (gitignored, no versionado) con: tick, población, bloques/conexiones promedio, energía avg/min/max. Solo agregados, nunca detalle por criatura — para inspección liviana sin inflar contexto.
+
+### 8.6 Ciclo de vida — reproducción pasa a ser decisión activa (diseñado, no implementado)
+
+Reemplaza el modelo actual (reproducción automática al llegar a un umbral fijo de energía). Nuevo bloque `incubadora`:
+
+- **Input**: nivel de desarrollo del huevo actual (0 si no hay huevo en curso).
+- **Output**: cuánto alimento/energía invertir en el huevo este tick — la criatura decide activamente cuánta de su grasa/energía reservar para reproducirse vs. quedarse con ella, en vez de reproducirse automáticamente apenas cruza un umbral.
+- Pendiente de definir antes de implementar: ¿el huevo es una entidad separada en el mapa (con su propia posición, vulnerable a ser comido/atacado) o vive "dentro" del bloque hasta eclosionar? ¿Hay un mínimo de desarrollo para que el huevo sea viable si el padre muere antes de terminarlo?
+
+### 8.7 Ideas registradas para más adelante (no priorizadas)
+
+- Selección de parentesco: sonar que distinga pariente cercano de extraño (kin selection)
+- Costo de conexión proporcional a la distancia entre bloques en la grilla del genoma (penaliza cerebros "desparramados")
+- Bloque de comunicación/señalización entre naves (feromonas, posible mentira/señales falsas)
+- Envejecimiento: costo metabólico creciente con el tiempo de vida
