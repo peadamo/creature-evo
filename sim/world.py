@@ -36,6 +36,8 @@ class World:
 
         # Reproducción
         for creature in self.creatures[:]:
+            if len(self.creatures) >= self.max_population:
+                break
             new_genome = self.reproduction.reproduce(creature.genome, self.energy.energy_levels[id(creature)], 100)
             if new_genome:
                 self.spawn_creature(new_genome)
