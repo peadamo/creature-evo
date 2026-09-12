@@ -119,3 +119,14 @@ Reemplazó por completo el modelo viejo (reproducción automática al llegar a u
 - Costo de conexión proporcional a la distancia entre bloques en la grilla del genoma (penaliza cerebros "desparramados")
 - Bloque de comunicación/señalización entre naves (feromonas, posible mentira/señales falsas)
 - Envejecimiento: costo metabólico creciente con el tiempo de vida
+
+## 9. Cola de trabajo pendiente (priorizada)
+
+En curso ahora mismo: motores independientes por dirección + física de impulso/inercia (reemplaza el vector de movimiento promediado de la sección 8, ver historial de commits).
+
+1. **Fix: cableado de `incubadora`** — quedó sin conectar al banco por error mío (copié el patrón de boca/almacenamiento sin notar que incubadora sí tiene neuronas). Cablear `banco → invertir` igual que el actuador. Bloqueante para que la reproducción real empiece a ocurrir con frecuencia razonable.
+2. **Arma** (diseño en 8.2, sin implementar): daño de contacto lógico + selección de tipo de bloque objetivo + HP por bloque (tabla de valores a definir, banco neuronal frágil).
+3. **Panel de control visual** (pedido explícito): sliders de población mín/máx en vivo, velocidad de simulación, contador de FPS, slider de tasa de mutación, botón/slider de "subsidio" de comida extra.
+4. **Métricas de evolución real** en `sim_log.csv` (hoy solo agregados básicos): agregar señal de si está emergiendo comportamiento no-random, por ejemplo — distribución de umbrales del banco (¿se aleja de uniforme random?), tasa de huevos puestos por tick a lo largo del tiempo, población sostenida por encima del mínimo sin relleno artificial.
+5. **Casco/escudo**: bloque pasivo, sin neuronas, solo aporta HP extra a la nave (depende de que exista el sistema de HP del punto 2).
+6. Repasar bien todo el prototipo una vez que el arma+HP estén, antes de considerar la migración a GPU (sección 5) — no tiene sentido optimizar para escala hasta que la lógica evolutiva completa esté validada en chico.
