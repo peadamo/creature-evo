@@ -29,6 +29,8 @@ class Reproduction:
                 params = {'output': 0.0}
             elif block_type in ('boca', 'almacenamiento'):
                 params = {}
+            elif block_type == 'sonar':
+                params = {'dx': 0.0, 'dy': 0.0, 'activo': 0.0}
             else:
                 params = {'dx': 0.0, 'dy': 0.0}
             new_genome.add_block(block_type, x, y, params)

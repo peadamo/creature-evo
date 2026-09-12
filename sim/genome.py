@@ -18,7 +18,7 @@ class Genome:
             x, y = random.randint(0, 10), random.randint(0, 10)
             params = {}
             if block_type == 'sonar':
-                params = {'dx': 0.0, 'dy': 0.0}
+                params = {'dx': 0.0, 'dy': 0.0, 'activo': 0.0}
             elif block_type == 'actuador':
                 params = {'dx': 0.0, 'dy': 0.0}
             elif block_type in ['boca', 'almacenamiento']:
