@@ -14,6 +14,12 @@ class Renderer:
         scale_x = self.width / grid_w
         scale_y = self.height / grid_h
 
+        for pellet in getattr(world, 'food_pellets', []):
+            px = int(pellet['x'] * scale_x)
+            py = int(pellet['y'] * scale_y)
+            radius = max(2, min(6, int(pellet['amount'] / 20)))
+            pygame.draw.circle(self.screen, (0, 200, 0), (px, py), radius)
+
         for creature in world.creatures:
             x, y = creature.position
             screen_x = int(x * scale_x)
