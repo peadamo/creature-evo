@@ -216,8 +216,8 @@ class World:
         # Actualizar energía y consumo
         for creature in self.creatures:
             creature.evaluate()
-            self.physics.update_positions()
-            self.physics.handle_collisions()
+        self.physics.update_positions()
+        self.physics.handle_collisions()
 
         # Muerte por energía agotada
         for creature in self.creatures[:]:
