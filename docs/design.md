@@ -268,3 +268,47 @@ Estado general del código a esta altura: estable en corridas repetidas de 500-8
 `Physics.temperature_at(x,y)` — dos focos calientes en (25,25) y (75,75) del mapa de 100x100 (temp=3.0 en el centro de cada foco, ~1.0-1.3 en zonas frías/lejanas). El costo de mantenimiento total de cada criatura se multiplica por la temperatura de su posición actual — estar cerca de un foco caliente sale más caro de sostener, en teoría empujando migración hacia zonas frías (todavía no verificado si esto se traduce en comportamiento real, dado que el movimiento intencional sigue siendo poco frecuente). Visualizado en el modo visual como un mapa de calor de fondo (grilla 10x10, azul→naranja).
 
 **Mismo patrón de bug que el ciclo día/noche**: el commit de Aider dejó `temperature_at()` definida pero **nunca la aplicó** al costo real (a pesar de que el mensaje del commit decía "ajustar cálculo de costo considerando temperatura"), y nunca agregó la visualización pedida — encima con código muerto duplicado dentro del método por un corte/pegado mal hecho (mismo tipo de error que truncó `__init__` en el día/noche). Las tres piezas faltantes se completaron a mano. Van dos features seguidas de Aider con el mismo patrón de "el mensaje de commit describe más de lo que el código realmente hace" — vale la pena, de acá en más, verificar explícitamente que cada pieza pedida esté realmente presente en el diff, no solo que el código corra sin crashear.
+
+**Actualización**: desactivada la penalización de temperatura por pedido del usuario — agregar más dificultad ambiental antes de resolver el desafío básico de sobrevivir/comer/reproducirse arriesgaba dejar todo en una "sopa primordial" que nunca progresa (ver [[feedback_dont_stack_complexity]] en memoria). El código de `temperature_at()` y el mapa de calor visual quedan, solo el efecto en el costo está comentado.
+
+## 12. Sesión de balance activo (mañana, con el usuario presente)
+
+### 12.1 Diagnóstico del combate: sí están comiendo, el problema es el balance neto
+
+El usuario preguntó directamente "¿están comiendo?" tras ver poblaciones morir. Medido correctamente (instrumentando `absorb_food` en vivo, no el contador que se resetea cada 20 ticks): **sí comen** — 56.434 unidades absorbidas en 1951 eventos sobre 2000 ticks. El problema es que el gasto energético total (sobre todo moverse + sostener el banco neuronal) sigue superando lo que logran reponer. Se subió la densidad de comida natural de 10-100 a 50-300 (5x) como primer ajuste.
+
+### 12.2 Experimento del "bicho perfecto": aisla mecánica de aprendizaje evolutivo
+
+A pedido del usuario, se construyó a mano un genoma con cableado *intencional* (no evolucionado): 4 actuadores en direcciones cardinales, cada uno empujando proporcional a `cos(ángulo hacia la comida)`, e `invertir=1.0` fijo en la incubadora. Objetivo: separar "¿la mecánica del mundo permite sobrevivir/comer/reproducirse?" de "¿la evolución puede *encontrar* cómo hacerlo?".
+
+Resultado revelador: encontró comida, comió, y puso **8 huevos exitosos en 20 ticks** — pero **murió él mismo en el tick 21**. Causa: invertir el 100% de la grasa disponible en el huevo cada tick deja al `generador` sin combustible para la energía real que mantiene vivo al cuerpo — grasa es un recurso compartido entre "reproducirme" y "sobrevivir", y nada balancea eso automáticamente. Confirma que la mecánica en sí funciona (no es un bug), pero el techo de dificultad para que la evolución lo resuelva es más alto de lo pensado: no alcanza con aprender a comer, hay que aprender a *no gastar todo en reproducirse*.
+
+**Fix aplicado** (parche pedido explícitamente por el usuario, no solución "natural" definitiva): al poner un huevo, la criatura recibe un bonus de **+15 energía directa** (no grasa, para no realimentar la lógica de `invertir`). Repetido el experimento del bicho perfecto: pasó de morir en tick 21 con 8 huevos a morir en tick **537 con 251 huevos eclosionados** — mejora de ~25x. Sigue muriendo eventualmente porque el control de prueba es una estrategia extrema a propósito (invierte siempre el 100%).
+
+### 12.3 Bloque `almacenamiento` ahora es funcional (antes era decorativo)
+
+Hallazgo: `almacenamiento` existía como tipo de bloque pero no hacía nada — la grasa se acumulaba en una bolsa global (`fat_levels`) sin importar si la criatura tenía el bloque o no. Implementado (vía Aider, sin bugs esta vez): `World.fat_capacity(creature)` = 20 base + 50 por cada bloque `almacenamiento`. `absorb_food()` ahora respeta ese tope — una criatura llena no puede seguir absorbiendo (el excedente queda en el pellet para otros). Verificado: 20 sin almacenamiento, 120 con 2 bloques.
+
+### 12.4 En curso: sensor de "reserva propia" (propiocepción, no "autoconciencia")
+
+Objetivo: darle a la red una neurona de entrada que informe qué tan llena está la reserva de grasa (0 a 1), para que la evolución pueda eventualmente aprender a no invertir todo de una — sin hardcodear la regla, dándole a la red la información que hoy no tiene. Primera versión despachada a Aider con el sensor en el bloque `incubadora`; pendiente de ajustar para que viva en el bloque `almacenamiento` en su lugar (el bloque que efectivamente es la reserva), según feedback del usuario.
+
+### 12.5 Pendiente de definición conceptual: inventario completo de bloques
+
+Tabla de qué bloques están garantizados al nacer, cuáles son puramente al azar/evolutivos:
+
+| Bloque | Garantizado al nacer | Extra al azar (1-3) | Solo por mutación después |
+|---|---|---|---|
+| `banco_neuronal` | Sí (único, protegido de mutación-remove) | No | No |
+| `boca` | Sí | Sí (puede duplicarse) | Sí |
+| `generador` | Sí | Sí (puede duplicarse) | Sí |
+| `actuador` | Sí | Sí (puede duplicarse) | Sí |
+| `sonar` | Sí | Sí (puede duplicarse) | Sí |
+| `incubadora` | **Pendiente de agregar como garantizado** — razón del usuario: una criatura sin incubadora nunca puede reproducirse, es simular vidas sin sentido para el experimento | Sí (hoy) | Sí |
+| `almacenamiento` | No | Sí | Sí |
+| `arma` | No | Sí | Sí |
+| `casco` | No | Sí | Sí |
+
+**Decisión tomada, pendiente de implementar**: agregar `incubadora` a la lista de bloques garantizados al nacer (junto a boca/generador/actuador/sonar), cableada al banco desde el genoma inicial — no dejarlo librado al azar.
+
+**Propuesta en discusión (no implementada, solo conceptual todavía)**: dividir `sonar` en dos bloques separados — `radar_criaturas` (detecta al vecino más cercano) y `radar_comida` (detecta el pellet más cercano) — en vez de un solo bloque que trae ambas señales mezcladas. Permitiría que la evolución elija tener uno sin el otro (ej. un "herbívoro" que no le importa dónde están los demás). Usuario dijo estar abierto a discusión pero no confirmó todavía — no tocar código hasta que se decida.
