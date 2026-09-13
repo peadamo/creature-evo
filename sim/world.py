@@ -7,6 +7,7 @@ from sim.energy import Energy
 from sim.reproduction import Reproduction
 import random
 from sim.genome import Genome
+from sim.spatial_grid import SpatialGrid
 import csv
 
 class World:
@@ -80,15 +81,9 @@ class World:
 
     def update_sensors(self):
         for creature in self.creatures:
-            nearest_distance = float('inf')
-            nearest_creature = None
-
-            for other_creature in self.creatures:
-                if id(other_creature) != id(creature):
-                    distance = math.hypot(other_creature.position[0]-creature.position[0], other_creature.position[1]-creature.position[1])
-                    if distance < nearest_distance:
-                        nearest_distance = distance
-                        nearest_creature = other_creature
+            nearest_creature, _ = self.creature_grid.nearest(
+                creature.position[0], creature.position[1], exclude_obj=creature
+            )
 
             if nearest_creature:
                 dx = (nearest_creature.position[0] - creature.position[0]) / self.physics.grid_size[0]
@@ -96,13 +91,9 @@ class World:
             else:
                 dx, dy = 0.0, 0.0
 
-            nearest_food_distance = float('inf')
-            nearest_food = None
-            for pellet in self.food_pellets:
-                distance = math.hypot(pellet['x']-creature.position[0], pellet['y']-creature.position[1])
-                if distance < nearest_food_distance:
-                    nearest_food_distance = distance
-                    nearest_food = pellet
+            nearest_food, nearest_food_distance = self.food_grid.nearest(
+                creature.position[0], creature.position[1]
+            )
 
             if nearest_food:
                 dx_comida = (nearest_food['x'] - creature.position[0]) / self.physics.grid_size[0]
@@ -270,20 +261,19 @@ class World:
 
     def apply_combat(self):
         target_types = ['banco_neuronal', 'sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco']
-        
+        live_ids = {id(c) for c in self.creatures}
+
         for attacker in self.creatures:
+            if id(attacker) not in live_ids:
+                continue  # ya murió antes en este mismo tick (víctima de otro atacante)
             for block_type, ax, ay, _ in attacker.genome.blocks:
                 if block_type == 'arma':
-                    nearest_distance = float('inf')
-                    nearest_victim = None
-                    
-                    for victim in self.creatures:
-                        if id(victim) != id(attacker):
-                            distance = math.hypot(victim.position[0]-attacker.position[0], victim.position[1]-attacker.position[1])
-                            if distance < nearest_distance and distance <= 3.0:
-                                nearest_distance = distance
-                                nearest_victim = victim
-                    
+                    nearest_victim, _ = self.creature_grid.nearest(
+                        attacker.position[0], attacker.position[1], exclude_obj=attacker, max_radius=3.0
+                    )
+                    if nearest_victim is not None and id(nearest_victim) not in live_ids:
+                        nearest_victim = None  # murió en este mismo tick, dato de la grilla desactualizado
+
                     if nearest_victim:
                         objetivo_value = attacker.neurons.get(f'neuron_arma_{ax}_{ay}_objetivo', 0)
                         index = int(abs(objetivo_value) * 100) % len(target_types)
@@ -308,6 +298,7 @@ class World:
                                 # llevó todo, la criatura muere ahí mismo.
                                 if not nearest_victim.genome.blocks:
                                     self.kill_creature(id(nearest_victim))
+                                    live_ids.discard(id(nearest_victim))
         
     def apply_generators(self):
         for creature in self.creatures:
@@ -320,24 +311,25 @@ class World:
                     self.fat_levels[id(creature)] -= consumed_fat
 
     def absorb_food(self):
+        live_pellet_ids = {id(p) for p in self.food_pellets}
         for creature in self.creatures:
             for block in creature.genome.blocks:
                 if block[0] == 'boca':
-                    nearest_distance = float('inf')
-                    nearest_pellet = None
-                    for pellet in self.food_pellets:
-                        distance = math.hypot(pellet['x']-creature.position[0], pellet['y']-creature.position[1])
-                        if distance < nearest_distance and distance <= 2.0:
-                            nearest_distance = distance
-                            nearest_pellet = pellet
+                    nearest_pellet, _ = self.food_grid.nearest(
+                        creature.position[0], creature.position[1], max_radius=2.0
+                    )
 
-                    if nearest_pellet:
+                    # La grilla es una foto fija de este tick: otra criatura
+                    # puede haber vaciado (o ya removido de food_pellets)
+                    # este mismo pellet unos pasos antes en este mismo tick.
+                    if nearest_pellet and nearest_pellet['amount'] > 0 and id(nearest_pellet) in live_pellet_ids:
                         absorbed_amount = min(5, nearest_pellet['amount'])
                         self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + absorbed_amount
                         nearest_pellet['amount'] -= absorbed_amount
                         self.food_absorbed_since_log += absorbed_amount
                         if nearest_pellet['amount'] <= 0:
                             self.food_pellets.remove(nearest_pellet)
+                            live_pellet_ids.discard(id(nearest_pellet))
 
     def tick(self):
         self.tick_count += 1
@@ -346,6 +338,14 @@ class World:
                 genome = Genome.random_initial()
                 self.spawn_creature(genome)
                 self.artificial_refills_since_log += 1
+
+        # Reconstruir índices espaciales una vez por tick, reusados por
+        # update_sensors/absorb_food/apply_combat en vez de que cada uno
+        # recorra todas las criaturas/pellets por separado (O(n^2)).
+        self.creature_grid = SpatialGrid(cell_size=10.0)
+        self.creature_grid.build((c.position[0], c.position[1], c) for c in self.creatures)
+        self.food_grid = SpatialGrid(cell_size=10.0)
+        self.food_grid.build((p['x'], p['y'], p) for p in self.food_pellets)
 
         # Actualizar sensores
         self.update_sensors()
