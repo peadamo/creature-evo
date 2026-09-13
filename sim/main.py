@@ -1,5 +1,6 @@
 import argparse
 from sim.world import World
+from sim.ui import ControlPanel
 from sim.render import Renderer
 import pygame
 
@@ -15,9 +16,11 @@ def main(num_ticks, visual=False):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                panel.handle_event(event)
 
-            world.tick()
-            renderer.draw(world)
+            for _ in range(panel.ticks_per_frame):
+                world.tick()
+            renderer.draw(world, ui_panel=panel, fps=clock.get_fps())
             pygame.display.flip()
             clock.tick(30)  # Limitar a 30 FPS
     else:

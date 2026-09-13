@@ -1,4 +1,5 @@
 import pygame
+import pygame.font
 
 class Renderer:
     def __init__(self, width=800, height=600):
@@ -6,8 +7,9 @@ class Renderer:
         self.height = height
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Creature-Evo Simulation")
+        self.font = pygame.font.SysFont(None, 20)
 
-    def draw(self, world):
+    def draw(self, world, ui_panel=None, fps=0):
         self.screen.fill((0, 0, 0))  # Limpiar la pantalla con negro
 
         grid_w, grid_h = world.physics.grid_size
@@ -36,4 +38,6 @@ class Renderer:
 
             pygame.draw.circle(self.screen, color, (screen_x, screen_y), 5)  # Dibujar criatura como un círculo pequeño
 
+        if ui_panel:
+            ui_panel.draw(self.screen, self.font, fps)
         pygame.display.flip()
