@@ -296,15 +296,20 @@ class World:
 
                         # Decidir si liberar el huevo
                         viability_threshold = egg['capacity'] * 0.5
-                        if liberar_value > 0.5 and egg['phase'] == 'interno':
+                        if egg['phase'] == 'interno':
+                            # Auto-liberar al 50% viability (no espera neurona)
                             if egg['progress'] >= viability_threshold:
                                 egg['phase'] = 'externo'
-                            else:
-                                # Lanzar antes del 50% = no viable, se pierde
-                                self.eggs.remove(egg)
-                                del self.creature_eggs[id(creature)]
-                                creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = 0.0
-                                continue
+                            # O liberar temprano si neurona > 0.5 (riesgo: muere si < 50%)
+                            elif liberar_value > 0.5:
+                                if egg['progress'] >= viability_threshold:
+                                    egg['phase'] = 'externo'
+                                else:
+                                    # Lanzar antes del 50% = no viable
+                                    self.eggs.remove(egg)
+                                    del self.creature_eggs[id(creature)]
+                                    creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = 0.0
+                                    continue
 
                         # Crecimiento autónomo si es externo (1.0/tick = 30 ticks promedio para eclosionar)
                         if egg['phase'] == 'externo':
