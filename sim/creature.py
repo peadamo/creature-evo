@@ -39,10 +39,13 @@ class Creature:
 
             if block_type != 'banco_neuronal':
                 for param in params.keys():
-                    if block_type == 'actuador' and param == 'direccion':
-                        continue  # geometría fija del bloque, no es una señal
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{param}"
                     self.neurons[neuron_id] = 0.0
+
+                # Neurona de dirección para actuadores (output, controla ángulo)
+                if block_type == 'actuador':
+                    direccion_neuron = f"neuron_{block_type}_{x}_{y}_direccion"
+                    self.neurons[direccion_neuron] = 0.0
 
                 # Neurona dormir: output que desactiva el bloque si > 0.5
                 dormir_neuron_id = f"neuron_{block_type}_{x}_{y}_dormir"

@@ -33,7 +33,10 @@ class Physics:
                     continue
                 impulso = creature.neurons.get(f"neuron_actuador_{bx}_{by}_impulso", 0.0)
                 impulso = max(0.0, min(1.0, impulso))
-                direccion = params.get('direccion', 0.0)
+                # Neurona de dirección: mapear [0-1] a [0-2π]
+                direccion_neuron = creature.neurons.get(f"neuron_actuador_{bx}_{by}_direccion", 0.0)
+                direccion_normalized = max(0.0, min(1.0, direccion_neuron))
+                direccion = direccion_normalized * 6.283  # 2π
                 thrust_x += impulso * math.cos(direccion) * 1.2
                 thrust_y += impulso * math.sin(direccion) * 1.2
 

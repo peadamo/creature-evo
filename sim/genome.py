@@ -20,7 +20,8 @@ class Genome:
             elif block_type == 'radar_parentesco':
                 return {'dx': 0.0, 'dy': 0.0, 'parentesco': 0.0, 'activo': 0.0, 'suicidio': 0.0}
             elif block_type == 'actuador':
-                return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0, 'suicidio': 0.0}
+                # direccion inicial: seed para backward-compatibility, pero neurona dirección_output la controla
+                return {'impulso': 0.0, 'suicidio': 0.0}
             elif block_type in ('boca', 'casco'):
                 return {'suicidio': 0.0}
             elif block_type == 'almacenamiento':
@@ -75,7 +76,10 @@ class Genome:
                 for _ in range(2):
                     genome.add_connection(bank_neuron(), f"neuron_sonar_{x}_{y}_activo", random.uniform(-1.0, 1.0))
             elif block_type == 'actuador':
+                # impulso: magnitud (0-1)
                 genome.add_connection(bank_neuron(), f"neuron_actuador_{x}_{y}_impulso", random.uniform(-1.0, 1.0))
+                # dirección: ángulo (0-2π mapeado desde 0-1)
+                genome.add_connection(bank_neuron(), f"neuron_actuador_{x}_{y}_direccion", random.uniform(-1.0, 1.0))
             elif block_type == 'incubadora':
                 # Pesos hacia invertir/liberar deben ser positivos: son outputs que representan porcentajes (0-1)
                 genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_invertir", random.uniform(0.0, 1.0))
