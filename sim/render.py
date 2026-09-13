@@ -49,8 +49,22 @@ class Renderer:
         for egg in getattr(world, 'eggs', []):
             ex = int(egg['x'] * scale_x)
             ey = int(egg['y'] * scale_y)
-            radius = 3 + int(egg['progress'] * 4)
-            pygame.draw.circle(self.screen, (220, 220, 0), (ex, ey), radius)
+
+            # Tamaño del huevo = progreso visual
+            progress_pct = min(1.0, egg['progress'] / egg['capacity'])
+            radius = 3 + int(progress_pct * 6)
+
+            # Color según fase
+            color = (220, 180, 0) if egg['phase'] == 'interno' else (220, 220, 0)
+            pygame.draw.circle(self.screen, color, (ex, ey), radius)
+
+            # Barra de progreso arriba del huevo
+            bar_width = 12
+            bar_height = 2
+            bar_x = ex - bar_width // 2
+            bar_y = ey - radius - 6
+            pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))  # fondo
+            pygame.draw.rect(self.screen, (0, 200, 0), (bar_x, bar_y, int(bar_width * progress_pct), bar_height))  # progreso
 
         for marker in getattr(world, 'death_markers', []):
             mx = int(marker['x'] * scale_x)
