@@ -494,6 +494,17 @@ class World:
         # Actualizar energía y consumo
         for creature in self.creatures:
             creature.evaluate()
+
+        # Aplicar suicidio de bloques: si neurona_suicidio > 0.5, remover bloque
+        for creature in self.creatures[:]:
+            for block_type, x, y, params in creature.genome.blocks[:]:
+                suicidio_neuron = f"neuron_{block_type}_{x}_{y}_suicidio"
+                if suicidio_neuron in creature.neurons:
+                    if creature.neurons[suicidio_neuron] > 0.5:
+                        # Proteger bloques garantizados de suicidio: mismo set que en mutation
+                        if block_type not in {'incubadora', 'boca', 'generador', 'actuador', 'sonar'}:
+                            creature.remove_block(block_type, x, y)
+
         self.physics.update_positions()
         self.physics.handle_collisions()
 

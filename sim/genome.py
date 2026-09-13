@@ -16,22 +16,24 @@ class Genome:
 
         def make_params(block_type):
             if block_type == 'sonar':
-                return {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
+                return {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0, 'suicidio': 0.0}
             elif block_type == 'radar_parentesco':
-                return {'dx': 0.0, 'dy': 0.0, 'parentesco': 0.0, 'activo': 0.0}
+                return {'dx': 0.0, 'dy': 0.0, 'parentesco': 0.0, 'activo': 0.0, 'suicidio': 0.0}
             elif block_type == 'actuador':
-                return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
+                return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0, 'suicidio': 0.0}
             elif block_type in ('boca', 'casco'):
-                return {}
+                return {'suicidio': 0.0}
             elif block_type == 'almacenamiento':
-                return {'reserva': 0.0}
+                return {'reserva': 0.0, 'suicidio': 0.0}
             elif block_type == 'incubadora':
-                return {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0}
+                return {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0, 'suicidio': 0.0}
             elif block_type == 'arma':
-                return {'objetivo': 0.0}
+                return {'objetivo': 0.0, 'suicidio': 0.0}
             elif block_type == 'generador':
-                return {'output': 0.0}
-            return {}
+                return {'output': 0.0, 'suicidio': 0.0}
+            elif block_type == 'banco_neuronal':
+                return {'num_neurons': 8, 'thresholds': [random.uniform(0.1, 0.6) for _ in range(8)]}
+            return {'suicidio': 0.0}
 
         io_blocks = []
 

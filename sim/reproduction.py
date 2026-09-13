@@ -44,24 +44,24 @@ class Reproduction:
         }
         
         if random.random() < mutation_probabilities['add_block']:
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco', 'radar_parentesco'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             if block_type == 'generador':
-                params = {'output': 0.0}
+                params = {'output': 0.0, 'suicidio': 0.0}
             elif block_type in ('boca', 'casco'):
-                params = {}
+                params = {'suicidio': 0.0}
             elif block_type == 'almacenamiento':
-                params = {'reserva': 0.0}
+                params = {'reserva': 0.0, 'suicidio': 0.0}
             elif block_type == 'sonar':
-                params = {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
+                params = {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0, 'suicidio': 0.0}
             elif block_type == 'radar_parentesco':
-                params = {'dx': 0.0, 'dy': 0.0, 'parentesco': 0.0, 'activo': 0.0}
+                params = {'dx': 0.0, 'dy': 0.0, 'parentesco': 0.0, 'activo': 0.0, 'suicidio': 0.0}
             elif block_type == 'incubadora':
-                params = {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0}
+                params = {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0, 'suicidio': 0.0}
             elif block_type == 'arma':
-                params = {'objetivo': 0.0}
+                params = {'objetivo': 0.0, 'suicidio': 0.0}
             else:
-                params = {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
+                params = {'direccion': random.uniform(0, 6.283), 'impulso': 0.0, 'suicidio': 0.0}
             new_genome.add_block(block_type, x, y, params)
         
         if random.random() < mutation_probabilities['remove_block']:
