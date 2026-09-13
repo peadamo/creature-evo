@@ -28,14 +28,22 @@ class World:
         self.max_lifespan_ever = 0
         self.death_markers = []  # [{'x','y','ticks_left'}] para el indicador visual de muerte
         self.death_causes_since_log = {}
+        self.generation = {}
+        self.max_generation_ever = 0
+        self.food_absorbed_since_log = 0.0
+        self.food_distance_sum_since_log = 0.0
+        self.food_distance_samples_since_log = 0
 
-    def spawn_creature(self, genome, position=None):
+    def spawn_creature(self, genome, position=None, generation=0):
         creature = Creature(genome)
         self.creatures.append(creature)
         self.physics.add_creature(creature, position)
         self.energy.add_creature(id(creature))
         self.fat_levels[id(creature)] = 0
         self.birth_tick[id(creature)] = self.tick_count
+        self.generation[id(creature)] = generation
+        self.max_generation_ever = max(self.max_generation_ever, generation)
+        return creature
 
     def kill_creature(self, creature_id):
         dying = next((c for c in self.creatures if id(c) == creature_id), None)
@@ -64,6 +72,7 @@ class World:
             del self.fat_levels[creature_id]
         self.physics.velocities.pop(creature_id, None)
         self.birth_tick.pop(creature_id, None)
+        self.generation.pop(creature_id, None)
 
     def update_sensors(self):
         for creature in self.creatures:
@@ -94,18 +103,26 @@ class World:
             if nearest_food:
                 dx_comida = (nearest_food['x'] - creature.position[0]) / self.physics.grid_size[0]
                 dy_comida = (nearest_food['y'] - creature.position[1]) / self.physics.grid_size[1]
+                self.food_distance_sum_since_log += nearest_food_distance
+                self.food_distance_samples_since_log += 1
             else:
                 dx_comida, dy_comida = 0.0, 0.0
 
             for block in creature.genome.blocks:
                 if block[0] == 'sonar':
                     x, y = block[1], block[2]
-                    io_id_activo = f"neuron_sonar_{x}_{y}_activo"
-                    if creature.neurons.get(io_id_activo, 0) > 0:
-                        creature.neurons[f"neuron_sonar_{x}_{y}_dx"] = dx
-                        creature.neurons[f"neuron_sonar_{x}_{y}_dy"] = dy
-                        creature.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = dx_comida
-                        creature.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = dy_comida
+                    # El toggle 'activo' generaba un problema de huevo-y-gallina:
+                    # nace apagado, y solo se enciende en el instante exacto en
+                    # que la neurona del banco conectada dispara CON peso
+                    # positivo (~50% de las veces ni eso) - el sensor quedaba
+                    # ciego la enorme mayoría del tiempo desde el nacimiento,
+                    # sin poder aprender nada. El sonar ahora siempre sensa;
+                    # 'activo' queda como neurona de salida disponible para que
+                    # la evolución la use en el futuro (ver costo fijo abajo).
+                    creature.neurons[f"neuron_sonar_{x}_{y}_dx"] = dx
+                    creature.neurons[f"neuron_sonar_{x}_{y}_dy"] = dy
+                    creature.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = dx_comida
+                    creature.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = dy_comida
 
     def log_summary(self, path='sim_log.csv'):
         import os
@@ -117,6 +134,8 @@ class World:
             'egg_count', 'food_pellet_count',
             'max_lifespan_ever', 'avg_lifespan_last_500',
             'deaths_starvation', 'deaths_starvation_brain_dead',
+            'max_generation_ever', 'food_absorbed_per_20ticks', 'avg_distance_to_nearest_food',
+            'pct_with_incubadora', 'pct_incubadora_wired', 'avg_sonar_activo',
         ]
 
         all_thresholds = []
@@ -124,6 +143,24 @@ class World:
             for block_type, x, y, params in c.genome.blocks:
                 if block_type == 'banco_neuronal':
                     all_thresholds.extend(params.get('thresholds', []))
+
+        has_incubadora = [any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks) for c in self.creatures]
+
+        def incubadora_wired(c):
+            for bt, x, y, _ in c.genome.blocks:
+                if bt == 'incubadora':
+                    dest = f"neuron_incubadora_{x}_{y}_invertir"
+                    if any(d == dest for (_, d) in c.connections.keys()):
+                        return True
+            return False
+
+        incubadora_wired_flags = [incubadora_wired(c) for c in self.creatures if any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks)]
+
+        sonar_activo_values = []
+        for c in self.creatures:
+            for bt, x, y, _ in c.genome.blocks:
+                if bt == 'sonar':
+                    sonar_activo_values.append(c.neurons.get(f"neuron_sonar_{x}_{y}_activo", 0))
 
         data = [
             self.tick_count,
@@ -143,6 +180,12 @@ class World:
             np.mean([l for (_, l) in self.lifespan_history]) if self.lifespan_history else 0,
             self.death_causes_since_log.get('starvation', 0),
             self.death_causes_since_log.get('starvation_brain_dead', 0),
+            self.max_generation_ever,
+            self.food_absorbed_since_log,
+            (self.food_distance_sum_since_log / self.food_distance_samples_since_log) if self.food_distance_samples_since_log else -1,
+            (sum(has_incubadora) / len(has_incubadora)) if has_incubadora else 0,
+            (sum(incubadora_wired_flags) / len(incubadora_wired_flags)) if incubadora_wired_flags else 0,
+            np.mean(sonar_activo_values) if sonar_activo_values else 0,
         ]
 
         with open(path, 'a', newline='') as file:
@@ -154,6 +197,9 @@ class World:
         self.eggs_hatched_since_log = 0
         self.artificial_refills_since_log = 0
         self.death_causes_since_log = {}
+        self.food_absorbed_since_log = 0.0
+        self.food_distance_sum_since_log = 0.0
+        self.food_distance_samples_since_log = 0
 
     def tick_incubadoras(self):
         import copy
@@ -175,7 +221,8 @@ class World:
                                 'x': creature.position[0],
                                 'y': creature.position[1],
                                 'progress': 0.0,
-                                'parent_genome': copy.deepcopy(creature.genome)
+                                'parent_genome': copy.deepcopy(creature.genome),
+                                'parent_generation': self.generation.get(id(creature), 0),
                             }
                             self.eggs.append(new_egg)
                             self.creature_eggs[id(creature)] = new_egg
@@ -204,7 +251,7 @@ class World:
         for egg in self.eggs[:]:
             if egg['progress'] >= 1.0:
                 new_genome = self.reproduction.mutate_genome(egg['parent_genome'])
-                self.spawn_creature(new_genome, (egg['x'], egg['y']))
+                self.spawn_creature(new_genome, (egg['x'], egg['y']), generation=egg.get('parent_generation', 0) + 1)
                 self.eggs.remove(egg)
                 del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
                 self.eggs_hatched_since_log += 1
@@ -276,6 +323,7 @@ class World:
                         absorbed_amount = min(5, nearest_pellet['amount'])
                         self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + absorbed_amount
                         nearest_pellet['amount'] -= absorbed_amount
+                        self.food_absorbed_since_log += absorbed_amount
                         if nearest_pellet['amount'] <= 0:
                             self.food_pellets.remove(nearest_pellet)
 
@@ -309,9 +357,7 @@ class World:
                     num_neurons = params.get('num_neurons', 0)
                     cost += 0.5 * num_neurons
                 elif block_type == 'sonar':
-                    io_id_activo = f"neuron_sonar_{x}_{y}_activo"
-                    if creature.neurons.get(io_id_activo, 0) > 0:
-                        cost += 0.3
+                    cost += 0.15  # fijo ahora que el sonar siempre está encendido
                 elif block_type == 'actuador':
                     impulso = creature.neurons.get(f"neuron_actuador_{x}_{y}_impulso", 0)
                     cost += 2 * max(0.0, min(1.0, impulso))
