@@ -87,12 +87,23 @@ class Creature:
             self.potentials.pop(neuron_id, None)
             self.neuron_thresholds.pop(neuron_id, None)
         
-        # Eliminar conexiones asociadas al bloque
+        # Eliminar conexiones asociadas al bloque - tanto del diccionario en
+        # vivo (self.connections, usado por evaluate() de ESTA instancia)
+        # como de la lista genética (self.genome.connections). Si solo se
+        # limpia self.connections, un hijo nacido de este genoma más
+        # adelante (self.genome.connections viaja en el huevo vía
+        # copy.deepcopy) hereda una conexión colgante hacia una neurona que
+        # ya no existe, y crashea al construirse.
         self.connections = {
             (origin, dest): weight
             for (origin, dest), weight in self.connections.items()
             if not (origin.startswith(prefix) or dest.startswith(prefix))
         }
+        self.genome.connections = [
+            (origin, dest, weight, enabled)
+            for (origin, dest, weight, enabled) in self.genome.connections
+            if not (origin.startswith(prefix) or dest.startswith(prefix))
+        ]
 
     def get_actuator_outputs(self):
         actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]
