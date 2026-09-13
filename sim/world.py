@@ -21,6 +21,8 @@ class World:
         self.eggs = []
         self.creature_eggs = {}
         self.fat_levels = {}
+        self.eggs_hatched_since_log = 0
+        self.artificial_refills_since_log = 0
 
     def spawn_creature(self, genome, position=None):
         creature = Creature(genome)
@@ -71,7 +73,20 @@ class World:
 
     def log_summary(self, path='sim_log.csv'):
         import os
-        headers = ['tick_count', 'population_count', 'avg_blocks_per_creature', 'avg_connections_per_creature', 'avg_energy_level', 'min_energy', 'max_energy']
+        headers = [
+            'tick_count', 'population_count', 'avg_blocks_per_creature', 'avg_connections_per_creature',
+            'avg_energy_level', 'min_energy', 'max_energy',
+            'avg_bank_threshold', 'std_bank_threshold',
+            'eggs_hatched_per_20ticks', 'artificial_refills_per_20ticks',
+            'egg_count', 'food_pellet_count',
+        ]
+
+        all_thresholds = []
+        for c in self.creatures:
+            for block_type, x, y, params in c.genome.blocks:
+                if block_type == 'banco_neuronal':
+                    all_thresholds.extend(params.get('thresholds', []))
+
         data = [
             self.tick_count,
             len(self.creatures),
@@ -79,7 +94,13 @@ class World:
             np.mean([len(c.connections) for c in self.creatures]) if self.creatures else 0,
             np.mean(list(self.energy.energy_levels.values())) if self.energy.energy_levels else 0,
             min(self.energy.energy_levels.values()) if self.energy.energy_levels else 0,
-            max(self.energy.energy_levels.values()) if self.energy.energy_levels else 0
+            max(self.energy.energy_levels.values()) if self.energy.energy_levels else 0,
+            np.mean(all_thresholds) if all_thresholds else 0,
+            np.std(all_thresholds) if all_thresholds else 0,
+            self.eggs_hatched_since_log,
+            self.artificial_refills_since_log,
+            len(self.eggs),
+            len(self.food_pellets),
         ]
 
         with open(path, 'a', newline='') as file:
@@ -87,6 +108,9 @@ class World:
             if not os.path.exists(path) or os.stat(path).st_size == 0:
                 writer.writerow(headers)
             writer.writerow(data)
+
+        self.eggs_hatched_since_log = 0
+        self.artificial_refills_since_log = 0
     def tick_incubadoras(self):
         import copy
         
@@ -139,6 +163,7 @@ class World:
                 self.spawn_creature(new_genome, (egg['x'], egg['y']))
                 self.eggs.remove(egg)
                 del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
+                self.eggs_hatched_since_log += 1
 
     def apply_combat(self):
         target_types = ['banco_neuronal', 'sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma']
@@ -210,6 +235,7 @@ class World:
             for _ in range(self.min_population - len(self.creatures)):
                 genome = Genome.random_initial()
                 self.spawn_creature(genome)
+                self.artificial_refills_since_log += 1
 
         # Actualizar sensores
         self.update_sensors()
@@ -237,10 +263,8 @@ class World:
                     if creature.neurons.get(io_id_activo, 0) > 0:
                         cost += 0.3
                 elif block_type == 'actuador':
-                    dx = creature.neurons.get(f"neuron_actuador_{x}_{y}_dx", 0)
-                    dy = creature.neurons.get(f"neuron_actuador_{x}_{y}_dy", 0)
-                    magnitude = np.sqrt(dx**2 + dy**2)
-                    cost += 2 * magnitude
+                    impulso = creature.neurons.get(f"neuron_actuador_{x}_{y}_impulso", 0)
+                    cost += 2 * max(0.0, min(1.0, impulso))
                 elif block_type == 'almacenamiento':
                     pass  # No tiene costo
                 elif block_type == 'generador':
