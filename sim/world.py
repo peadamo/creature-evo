@@ -399,7 +399,14 @@ class World:
                 elif block_type == 'boca':
                     pass  # No tiene costo
 
-            cost *= self.physics.temperature_at(creature.position[0], creature.position[1])
+            # Desactivado por ahora: agregar penalización de temperatura antes
+            # de que el desafío básico (comer/sobrevivir/reproducirse) esté
+            # resuelto solo apila más complejidad sobre un sistema que ya
+            # lucha por sobrevivir - riesgo de quedar como "sopa primordial"
+            # que nunca progresa. self.physics.temperature_at() sigue
+            # existiendo (y se ve en el visual) para cuando tenga sentido
+            # reactivarlo.
+            # cost *= self.physics.temperature_at(creature.position[0], creature.position[1])
             self.energy.consume_energy(id(creature), cost)
 
         # Reproducción ahora sucede solo vía incubadora/huevos
