@@ -239,3 +239,10 @@ Usando el checkpointing nuevo: guardé una población tras 8000 ticks de corrida
 - **Control (desde cero)**: se quedó en generación 1, pero con 30 nacimientos totales — más eventos de reproducción, aunque menos profundos.
 
 Sin señal clara a favor de sembrar. Motivo probable: un checkpoint tomado "a lo que sea que esté vivo en ese momento" no es lo mismo que un checkpoint de "los que mejor se reprodujeron" — es solo una muestra de supervivientes al azar, no necesariamente enriquecida en el rasgo que nos interesa (incubadora cableada + bien alimentados). Para que este experimento tenga sentido real, habría que filtrar el checkpoint a los individuos con mejor `pct_incubadora_wired`/mayor longevidad antes de guardarlo, no guardar la población entera tal cual quedó.
+
+**Segundo intento, con checkpoint filtrado** (`World.save_successful_population()`, solo incubadora cableada + mínimo de bloques): de una corrida de 8000 ticks, apenas **2 individuos** calificaron como "exitosos" — la semilla quedó chica de entrada. Repetí la comparación (8000 ticks más cada una):
+
+- **Sembrada (2 exitosos)**: generación 4 recién en tick 7000, con 42 nacimientos totales.
+- **Control (desde cero)**: generación 4 ya en tick 5000 (más rápido), con 49 nacimientos totales en todo momento — consistentemente por delante.
+
+**Conclusión (dos intentos, misma dirección)**: sembrar con una población reducida de "exitosos" no ayudó, y en este caso el control fue más rápido y prolífico. Hipótesis para explicarlo: una semilla de solo 2 individuos reduce la diversidad genética inicial (menos variantes de umbral/cableado para que la selección elija), mientras que arrancar 100% al azar con `min_population=20` genera 20 variantes distintas desde el tick 0 — más "tiros de dados" en paralelo desde el principio le gana a partir de pocos "buenos" candidatos. Si se quisiera reintentar esto con más rigor, convendría sembrar con una población GRANDE de exitosos (no 2), lo cual requeriría correr muchísimo más tiempo para acumular suficientes candidatos que califiquen — no se hizo por límite de tiempo de esta sesión.
