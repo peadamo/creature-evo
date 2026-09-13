@@ -247,7 +247,9 @@ class World:
                 egg['progress'] -= 0.1 * num_nearby_mouths
                 if egg['progress'] <= 0:
                     self.eggs.remove(egg)
-                    del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
+                    owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
+                    if owner_key is not None:
+                        del self.creature_eggs[owner_key]
                     for creature in self.creatures:
                         if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and \
                            ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0:
@@ -259,7 +261,9 @@ class World:
                 new_genome = self.reproduction.mutate_genome(egg['parent_genome'])
                 self.spawn_creature(new_genome, (egg['x'], egg['y']), generation=egg.get('parent_generation', 0) + 1)
                 self.eggs.remove(egg)
-                del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
+                owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
+                if owner_key is not None:
+                    del self.creature_eggs[owner_key]
                 self.eggs_hatched_since_log += 1
 
     def apply_combat(self):
