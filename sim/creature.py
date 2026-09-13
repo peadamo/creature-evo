@@ -17,11 +17,13 @@ class Creature:
                 num_neurons = params.get('num_neurons', 0)
                 for i in range(num_neurons):
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{i}"
-                    # Bias interno: sin esto todas las neuronas parten en 0 y
-                    # nunca hay señal, sin importar los pesos evolucionados.
                     self.neurons[neuron_id] = 0.0
-                    self.potentials[neuron_id] = 0.0
-                    self.neuron_thresholds[neuron_id] = params['thresholds'][i]
+                    # Potencial inicial aleatorio: si todas arrancan en 0.0 exacto,
+                    # todas las criaturas quedan en fase y disparan sincronizadas
+                    # (falso patrón, no algo que emergió de la evolución).
+                    threshold = params['thresholds'][i]
+                    self.potentials[neuron_id] = random.uniform(0.0, threshold)
+                    self.neuron_thresholds[neuron_id] = threshold
             else:
                 for param in params.keys():
                     if block_type == 'actuador' and param == 'direccion':
