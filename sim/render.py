@@ -21,6 +21,28 @@ class Renderer:
         scale_x = self.width / grid_w
         scale_y = self.height / grid_h
 
+        # Dibujar celdas con propiedades de color
+        cell_size_w = grid_w / 10
+        cell_size_h = grid_h / 10
+        for cx in range(10):
+            for cy in range(10):
+                props = world.cell_grid[(cx, cy)]
+                cell_x = cx * cell_size_w * scale_x
+                cell_y = cy * cell_size_h * scale_y
+                cell_w = cell_size_w * scale_x
+                cell_h = cell_size_h * scale_y
+                pygame.draw.rect(self.screen, props['color'], (cell_x, cell_y, cell_w, cell_h))
+                pygame.draw.rect(self.screen, (100, 100, 100), (cell_x, cell_y, cell_w, cell_h), 1)
+
+        # Resaltar celda seleccionada
+        if world.selected_cell:
+            cx, cy = world.selected_cell
+            cell_x = cx * cell_size_w * scale_x
+            cell_y = cy * cell_size_h * scale_y
+            cell_w = cell_size_w * scale_x
+            cell_h = cell_size_h * scale_y
+            pygame.draw.rect(self.screen, (255, 255, 0), (cell_x, cell_y, cell_w, cell_h), 3)
+
         # Mapa de calor de temperatura: grilla gruesa de 10x10 celdas, azul
         # (frío, temp~1.0) a naranja (caliente, temp~5.0 cerca de los focos).
         cells = 10

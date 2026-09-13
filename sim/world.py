@@ -20,6 +20,19 @@ class World:
         self.energy = Energy()
         self.reproduction = Reproduction()
         self.tick_count = 0
+
+        # Grilla de celdas 10x10 con propiedades
+        self.cell_grid = {}  # (cx, cy) → {'mutation_factor': 1.0, 'energy_cost': 1.0, 'color': (r,g,b)}
+        grid_w, grid_h = self.physics.grid_size  # 100x100
+        cell_size = grid_w // 10  # 10 celdas
+        for cx in range(10):
+            for cy in range(10):
+                self.cell_grid[(cx, cy)] = {
+                    'mutation_factor': 1.0,
+                    'energy_cost': 1.0,
+                    'color': (30, 30, 30)  # gris neutro
+                }
+        self.selected_cell = None  # (cx, cy) o None
         self.day_length = 500
         self.lineage_log = []
         self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300), 'created_tick': 0} for _ in range(60)]
@@ -43,6 +56,21 @@ class World:
 
     def is_daytime(self):
         return (self.tick_count % self.day_length) < (self.day_length / 2)
+
+    def get_cell_at(self, world_x, world_y):
+        """Obtener celda (cx, cy) en la que está la posición mundial"""
+        grid_w, grid_h = self.physics.grid_size
+        cell_size = grid_w / 10
+        cx = int(world_x / cell_size)
+        cy = int(world_y / cell_size)
+        cx = max(0, min(9, cx))
+        cy = max(0, min(9, cy))
+        return (cx, cy)
+
+    def get_cell_properties(self, world_x, world_y):
+        """Obtener propiedades de la celda en esa posición"""
+        cx, cy = self.get_cell_at(world_x, world_y)
+        return self.cell_grid[(cx, cy)]
 
     def spawn_creature(self, genome, position=None, generation=0, parent_id=None):
         creature = Creature(genome)
@@ -555,10 +583,12 @@ class World:
             creature.evaluate()
 
         # Mutaciones somáticas (lentas, cada tick pequeño cambio de pesos)
-        # Pasar campo de mutación si existe (desde UI)
+        # Pasar campo de mutación si existe (desde UI) y propiedades de celda
         mutation_field = ui_panel.mutation_field if ui_panel else None
         for creature in self.creatures:
-            creature.mutate_somatic(self.tick_count, mutation_rate=0.02, mutation_field=mutation_field, world_position=creature.position)
+            cell_props = self.get_cell_properties(creature.position[0], creature.position[1])
+            creature.mutate_somatic(self.tick_count, mutation_rate=0.02, mutation_field=mutation_field,
+                                   world_position=creature.position, cell_properties=cell_props)
 
         # Aplicar suicidio de bloques: si neurona_suicidio > 0.5, remover bloque
         for creature in self.creatures[:]:
