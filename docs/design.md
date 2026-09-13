@@ -143,3 +143,35 @@ Tras el fix, `egg_count` sigue en 0 durante toda una corrida de 5000 ticks — n
 Pendiente:
 
 1. Repasar bien todo el prototipo antes de considerar la migración a GPU (sección 5) — no tiene sentido optimizar para escala hasta que la lógica evolutiva completa esté validada en chico.
+
+## 10. Sesión de objetivo abierto: reproducción real y análisis emergente
+
+Contexto: se le dio a Claude el objetivo abierto de lograr reproducción sostenida multi-generación (linaje bisabuelo→nieto) y experimentar libremente con análisis de comportamiento/optimización, sin supervisión paso a paso.
+
+### 10.1 Cadena de bugs que bloqueaban toda reproducción real (encontrados y arreglados en secuencia)
+
+Cada uno estaba oculto por el anterior — recién se manifestaba al arreglar el previo:
+
+1. **Sonar ciego de nacimiento**: el toggle `activo` nacía apagado y casi nunca se prendía solo (problema huevo-gallina). El sonar ahora siempre sensa.
+2. **Calibración de disparo mal escalada**: la señal típica de los sensores (~0.03-0.08 normalizada) era demasiado chica frente al umbral de disparo (0.3-1.5) y la fuga (20%/tick) — casi ninguna neurona del banco disparaba nunca, en ningún lado del sistema. Fuga bajada a 5%/tick, umbrales a 0.1-0.6.
+3. **Primera inversión de huevo no contaba**: `mutate_genome`/`tick_incubadoras` solo sumaba progreso en inversiones *subsiguientes*, no en la que crea el huevo. Con el disparo tan raro (~2.6%/tick), la mayoría de las criaturas solo invierte una vez en toda su vida — esa única vez no contaba.
+4. **El huevo moría con el padre**: dado que casi nadie vive lo suficiente para invertir dos veces, perder el huevo al morir el padre garantizaba que ningún huevo llegara nunca a completarse. Ahora el huevo persiste huérfano.
+5. **Crash consecuente**: el fix anterior (huevo huérfano) rompió el código de eclosión/depredación, que asumía que siempre había un dueño registrado en `creature_eggs`. `StopIteration` al eclosionar el primer huevo sin padre vivo. Arreglado.
+6. **Tasa de progreso insuficiente**: incluso arreglado todo lo anterior, el multiplicador de progreso (0.02, luego 0.1) requería más inversiones de las que una vida realista permite. Subido a 0.5 — una sola inversión decente alcanza para completar un huevo.
+
+Resultado: primer huevo eclosionado con éxito, y una corrida de 5000 ticks alcanzó **generación 3** (bisabuelo→abuelo→padre→nieto). Pero en corridas de 8000 ticks, la población viva vuelve a colapsar a puro generación 0 la mayoría del tiempo — la reproducción ocurre pero como evento raro, no sostenido. Pendiente de más ajuste.
+
+### 10.2 Curiosidad destacada: la muerte cerebral es evolutivamente ventajosa (bug de balance)
+
+Análisis de correlación bloques↔longevidad sobre 1500+ muertes registradas:
+
+- Controlando por si el banco neuronal seguía intacto al morir, la cantidad de neuronas/conexiones **no** correlaciona con vida más corta (r≈-0.04, prácticamente nula) — descarta la hipótesis de "más cerebro = más caro, mueren antes" como efecto directo.
+- Pero: **las criaturas con el banco neuronal destruido en combate viven en promedio 177 ticks, contra 44 de las que lo conservan intacto — 4x más.** Perder el cerebro elimina su costo de mantenimiento (0.5×5 neuronas = 2.5 energía/tick) y las deja "congeladas" sin gastar en moverse; si había comida cerca, sobreviven a la deriva sin hacer nada. El sistema hoy premia la ausencia de cognición. Es un desbalance real (no arreglado aún) — decidir si corregirlo (ej. penalizar la inmovilidad, o encarecer tener el cuerpo sin cerebro) o dejarlo como hallazgo filosóficamente interesante del proyecto.
+
+### 10.3 Otra curiosidad: posible aversión a atacar parientes
+
+Con el color ahora heredado (sección 8), medí la distancia de color RGB entre atacante y víctima en eventos de combate real, contra la distancia de color de pares aleatorios de la población (proxy de parentesco genético). Sobre una muestra chica (262 eventos): distancia promedio atacante-víctima 178 vs. 162 de pares al azar — una tendencia leve a atacar a individuos *más* distintos (menos emparentados). Señal débil, muestra insuficiente para confirmar que no es ruido; interesante para repetir con más datos.
+
+### 10.4 Optimización de performance
+
+Perfilado con `cProfile` (100-150 población, 200 ticks) mostró que 32 de 59 segundos se iban en `np.linalg.norm` para calcular distancias 2D simples (13M llamadas, overhead de numpy desproporcionado para un cálculo trivial). Reemplazado por `math.hypot` en las 4 ubicaciones (`update_sensors`, `absorb_food`, `apply_combat`): **47x más rápido** (59s → 1.26s mismo trabajo). Sin cambio de comportamiento, solo velocidad.
