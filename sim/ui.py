@@ -38,6 +38,16 @@ class ControlPanel:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # Primero: chequear sliders (antes de procesar grid)
+            if event.button == 1:
+                for i, slider in enumerate(self.sliders):
+                    bar_x, bar_y = self._bar_pos(i)
+                    handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
+                    handle_rect = pygame.Rect(handle_x - 12, bar_y - 5, 24, 30)
+                    if handle_rect.collidepoint(event.pos):
+                        self.dragging = slider
+                        return
+
             # Click derecho: seleccionar celda para editar
             if event.button == 3:  # Botón derecho
                 grid_w, grid_h = self.world.physics.grid_size
@@ -91,12 +101,6 @@ class ControlPanel:
                     }
                 return
 
-            for i, slider in enumerate(self.sliders):
-                bar_x, bar_y = self._bar_pos(i)
-                handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
-                handle_rect = pygame.Rect(handle_x - 12, bar_y - 5, 24, 30)
-                if handle_rect.collidepoint(event.pos):
-                    self.dragging = slider
             if self.food_subsidy_button_rect.collidepoint(event.pos):
                 # Antes tiraba pellets chicos en posiciones 100% al azar del
                 # mapa - el efecto era invisible, se perdía entre la comida
