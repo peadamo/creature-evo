@@ -124,10 +124,11 @@ Reemplazó por completo el modelo viejo (reproducción automática al llegar a u
 
 Completado: motores independientes por dirección + física de impulso/inercia real (velocidad persistente, fricción, `Physics.velocities`) — reemplazó el vector de movimiento promediado de la sección 8. Cableado de `incubadora → banco` corregido de paso (no era un simple "olvido", el cableado de `actuador` tampoco había sido migrado del esquema viejo dx/dy al nuevo impulso — quedó todo prolijo en el mismo commit).
 
-En curso ahora: arma (punto 1).
+Completado: arma con daño de contacto lógico (radio 3.0), selección discretizada de tipo de bloque objetivo, HP por bloque (banco neuronal frágil = 10hp, resto = 30hp), destrucción de bloque al llegar a 0 (limpia neuronas/conexiones/HP asociados) y deja pellet de comida (15) en su lugar. Probado estable 2000 ticks sin crash.
 
-1. **Arma** (diseño en 8.2, sin implementar): daño de contacto lógico + selección de tipo de bloque objetivo + HP por bloque (tabla de valores a definir, banco neuronal frágil).
-2. **Panel de control visual** (pedido explícito): sliders de población mín/máx en vivo, velocidad de simulación, contador de FPS, slider de tasa de mutación, botón/slider de "subsidio" de comida extra.
-3. **Métricas de evolución real** en `sim_log.csv` (hoy solo agregados básicos): distribución de umbrales del banco (¿se aleja de uniforme random?), tasa de huevos puestos por tick a lo largo del tiempo, población sostenida por encima del mínimo sin relleno artificial.
-4. **Casco/escudo**: bloque pasivo, sin neuronas, solo aporta HP extra a la nave (depende del sistema de HP del punto 1).
-5. Repasar bien todo el prototipo una vez que el arma+HP estén, antes de considerar la migración a GPU (sección 5) — no tiene sentido optimizar para escala hasta que la lógica evolutiva completa esté validada en chico.
+En curso ahora: panel de control visual (punto 1).
+
+1. **Panel de control visual** (pedido explícito): sliders de población mín/máx en vivo, velocidad de simulación, contador de FPS, slider de tasa de mutación, botón/slider de "subsidio" de comida extra.
+2. **Métricas de evolución real** en `sim_log.csv` (hoy solo agregados básicos): distribución de umbrales del banco (¿se aleja de uniforme random?), tasa de huevos puestos por tick a lo largo del tiempo, población sostenida por encima del mínimo sin relleno artificial.
+3. **Casco/escudo**: bloque pasivo, sin neuronas, solo aporta HP extra a la nave.
+4. Repasar bien todo el prototipo antes de considerar la migración a GPU (sección 5) — no tiene sentido optimizar para escala hasta que la lógica evolutiva completa esté validada en chico.
