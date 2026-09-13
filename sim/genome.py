@@ -66,7 +66,7 @@ class Genome:
                 genome.add_connection(bank_neuron(), f"neuron_almacenamiento_{x}_{y}_suicidio", random.uniform(-1.0, 1.0))
             elif block_type == 'generador':
                 for _ in range(2):
-                    genome.add_connection(bank_neuron(), f"neuron_generador_{x}_{y}_output", random.uniform(-1.0, 1.0))
+                    genome.add_connection(bank_neuron(), f"neuron_generador_{x}_{y}_output", random.uniform(0.0, 1.0))
             elif block_type == 'sonar':
                 for _ in range(2):
                     genome.add_connection(f"neuron_sonar_{x}_{y}_dx", bank_neuron(), random.uniform(-1.0, 1.0))
