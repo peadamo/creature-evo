@@ -25,6 +25,7 @@ class Creature:
                     threshold = params['thresholds'][i]
                     self.potentials[neuron_id] = random.uniform(0.0, threshold)
                     self.neuron_thresholds[neuron_id] = threshold
+                    self.block_hp[(block_type, x, y)] = 10 if block_type == 'banco_neuronal' else 30
             else:
                 for param in params.keys():
                     if block_type == 'actuador' and param == 'direccion':
