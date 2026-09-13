@@ -138,7 +138,7 @@ Con la muerte real funcionando, una corrida nueva de 5000 ticks muestra `eggs_ha
 
 **Segundo bug encontrado en la misma revisión**: `tick_incubadoras()` estaba definida pero **nunca se llamaba** desde `World.tick()` — el comentario decía "reproducción ahora sucede vía incubadora" pero faltaba la línea que efectivamente la invocaba. Los huevos jamás se pusieron en ninguna corrida anterior. Corregido (commit `56d2d85`).
 
-Tras el fix, `egg_count` sigue en 0 durante toda una corrida de 5000 ticks — no es un bug nuevo esta vez: `incubadora` no es un bloque garantizado al nacer (solo boca/generador/actuador/sonar lo son), y con `avg_blocks_per_creature` rondando 1.85-2.1 en esa corrida, la población no está desarrollando bloques extra más allá de los garantizados — probablemente ningún individuo llegó a tener `incubadora` en esa ventana. Es esperable dado lo poco que sobrevive cada generación; no se toca más por ahora, es cuestión de dejarlo correr más tiempo o considerar si conviene que `incubadora` también sea garantizado.
+Tras el fix, `egg_count` sigue en 0 durante toda una corrida de 5000 ticks — el cuello de botella era que `incubadora` no era un bloque garantizado al nacer. Decisión posterior: `incubadora` agregada a bloques garantizados (junto con boca/generador/actuador/sonar), resolviendo este problema.
 
 Pendiente:
 
@@ -304,25 +304,28 @@ Tabla de qué bloques están garantizados al nacer, cuáles son puramente al aza
 | `generador` | Sí | Sí (puede duplicarse) | Sí |
 | `actuador` | Sí | Sí (puede duplicarse) | Sí |
 | `sonar` | Sí | Sí (puede duplicarse) | Sí |
-| `incubadora` | **Pendiente de agregar como garantizado** — razón del usuario: una criatura sin incubadora nunca puede reproducirse, es simular vidas sin sentido para el experimento | Sí (hoy) | Sí |
+| `incubadora` | ✅ **Sí (implementado)** — garantizado al nacer junto con boca/generador/actuador/sonar | Sí (puede duplicarse) | Sí |
 | `almacenamiento` | No | Sí | Sí |
 | `arma` | No | Sí | Sí |
 | `casco` | No | Sí | Sí |
 
-**Decisión tomada, pendiente de implementar**: agregar `incubadora` a la lista de bloques garantizados al nacer (junto a boca/generador/actuador/sonar), cableada al banco desde el genoma inicial — no dejarlo librado al azar.
+**Decisión tomada e implementada**: `incubadora` es ahora bloque garantizado al nacer, con neurona `liberar` agregada para control de fases del huevo (ver sección 13).
 
 **Propuesta en discusión (no implementada, solo conceptual todavía)**: dividir `sonar` en dos bloques separados — `radar_criaturas` (detecta al vecino más cercano) y `radar_comida` (detecta el pellet más cercano) — en vez de un solo bloque que trae ambas señales mezcladas. Permitiría que la evolución elija tener uno sin el otro (ej. un "herbívoro" que no le importa dónde están los demás). Usuario dijo estar abierto a discusión pero no confirmó todavía — no tocar código hasta que se decida.
 
 **Decisión tomada e implementada**: el `banco_neuronal` dejó de estar protegido de la mutación "quitar bloque" (`reproduction.py`). Motivo: se confirmó experimentalmente que el motor de evaluación ya soporta conexiones directas borde→borde (ej. `sonar_dx_comida → actuador_impulso`, sin pasar por el banco — probado, funciona sin retraso ni intermediario) porque la mutación `add_connection` elige 2 bloques al azar sin restricción. Con el banco desprotegido, una criatura puede evolucionar a deshacerse del "cerebro" por completo y sobrevivir a puro reflejo — una estrategia de vida legítima ("boca abierta, va derecho a la comida, cero cómputo intermedio"), no un error. Filosóficamente relevante para el objetivo del proyecto (¿hace falta un cerebro para estar "vivo"?).
 
-## 13. Rediseño del ciclo de vida del huevo (conceptual, no implementado todavía)
+## 13. Rediseño del ciclo de vida del huevo (✅ implementado)
 
-Propuesta del usuario, pendiente de implementar (no tocar código hasta confirmar detalles finales de las constantes):
+**Implementado en `World.tick_incubadoras()`** con los siguientes parámetros:
 
-1. **Costo del huevo escala con el tamaño genético de la cría**: `capacidad_huevo = base + K × cantidad_de_bloques_del_hijo` (a definir `base` y `K`). Un huevo que va a eclosionar en un bicho de 20 bloques cuesta más grasa/tiempo que uno de 5.
-2. **El huevo tiene dos fases**: "interno" (adentro de la madre, invisible/protegido del mundo, se desarrolla solo por inversión directa de la madre) y "externo" (ya liberado al mundo, visible, depredable, se desarrolla solo — sin más inversión de nadie — a partir de ahí).
-3. **La madre puede largar el huevo (pasar de interno a externo) en CUALQUIER momento del desarrollo**, sin restricción — nueva neurona de salida en la incubadora para esta decisión. No hay un piso obligatorio para poder largarlo.
-4. **Pero hay un umbral de viabilidad al 50% de `capacidad_huevo`**: si se larga ANTES de esa marca, el huevo queda no-viable y se pierde (no completa su desarrollo solo, la inversión se desperdicia). Si se larga en o después del 50%, el huevo sigue desarrollándose autónomamente hasta completarse.
-5. Trade-off resultante para que la evolución lo resuelva: largar temprano libera a la madre antes (menos tiempo con recursos comprometidos, ella puede volver a buscar comida/moverse libre) pero arriesga perder todo si no llegó a viabilidad; sostenerlo adentro es más seguro (protegido de depredación) pero más lento y le ata recursos a la madre por más tiempo.
+1. **Costo escalado por tamaño**: `capacidad_huevo = 10 + 2 × cantidad_de_bloques_del_hijo` (base=10, K=2). Un huevo para un bicho de 5 bloques cuesta 20; para uno de 15, cuesta 40.
+2. **Dos fases del huevo**: 
+   - "interno": dentro de la madre, protegido de depredación, desarrolla solo por inversión (`invertir` > 0)
+   - "externo": liberado en el mapa, visible y depredable por cualquier `boca`, se desarrolla autónomamente
+3. **Control de liberación**: nueva neurona `liberar` (output de incubadora) — si `liberar > 0.5` en fase "interno", intenta transicionar a fase "externo".
+4. **Umbral de viabilidad**: 50% de `capacidad_huevo`. Si se larga ANTES de alcanzar ese 50%, el huevo se destruye (no viable). Si >= 50%, prosigue desarrollo autónomo.
+5. **Crecimiento autónomo**: huevo en fase "externo" crece +0.1/tick automáticamente (independiente de inversión maternal). A este ritmo, un huevo viable tarda ~10-20 ticks extras en completarse tras ser liberado.
+6. **Eclosión**: cuando `progress >= capacidad_huevo`, nace la cría.
 
-Pendiente de definir antes de implementar: velocidad de crecimiento autónomo de un huevo ya externo y viable (¿tasa fija por tick?), y los valores concretos de `base`/`K` para el costo escalado por tamaño.
+**Trade-off evolutivo**: largar temprano (riesgo 50% de perder todo) libera recursos maternos para buscar comida/procrear de nuevo; sostener interno es seguro pero lento y mantiene a la madre atada.

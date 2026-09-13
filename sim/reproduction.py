@@ -19,6 +19,12 @@ class Reproduction:
     def mutate_genome(self, genome):
         new_genome = copy.deepcopy(genome)
 
+        # Garantizar que TODO genoma tiene al menos una incubadora (bloque garantizado)
+        if not any(b[0] == 'incubadora' for b in new_genome.blocks):
+            params = {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0}
+            x, y = random.randint(0, 10), random.randint(0, 10)
+            new_genome.add_block('incubadora', x, y, params)
+
         # Deriva leve de color hereditario, para poder rastrear linajes a
         # simple vista - el color no es exacto de padre a hijo, pero tampoco
         # cambia tanto como para perder el parecido de familia.
@@ -63,8 +69,13 @@ class Reproduction:
             # actuador, sin pasar por ningún cómputo intermedio) - ya
             # verificado que el motor de evaluación soporta esto sin
             # crashear. Es una estrategia de vida válida, no un error.
-            if new_genome.blocks:
-                block_to_remove = random.choice(new_genome.blocks)
+            # Bloques garantizados (incubadora, boca, generador, actuador, sonar)
+            # NO pueden ser removidos todos: protegemos incubadora específicamente
+            # porque es garantizado al nacer y necesario para reproducirse.
+            guaranteed = {'incubadora', 'boca', 'generador', 'actuador', 'sonar'}
+            removable = [b for b in new_genome.blocks if b[0] not in guaranteed]
+            if removable:
+                block_to_remove = random.choice(removable)
                 new_genome.blocks.remove(block_to_remove)
 
                 valid_ids = set()
