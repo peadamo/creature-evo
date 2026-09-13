@@ -230,3 +230,12 @@ Pedido explícito del usuario: seguir generando ángulos de análisis desde biol
 4. **Mayor capacidad de interacción**: hoy el panel de control permite ajustar población/velocidad/mutación/comida; se podría sumar poder click-clickear una criatura específica en el visual para ver su genoma/neuronas en un panel de inspección, en vez de solo agregados poblacionales.
 
 Nada de esto implementado todavía — es la cola de ideas para las próximas sesiones, priorizada según lo que el usuario indique.
+
+### 11.6 Experimento: ¿sembrar con población "madura" ayuda a reproducirse más? (resultado mixto)
+
+Usando el checkpointing nuevo: guardé una población tras 8000 ticks de corrida normal (`ckpt_mature.json`, 19 individuos, 15.8% con `incubadora` — de hecho por debajo del promedio base de ~23%, pura casualidad de esa corrida) y comparé arrancar una corrida nueva sembrada con ese checkpoint vs. una corrida control desde cero, ambas por 8000 ticks más:
+
+- **Sembrada**: alcanzó generación 2, con 19 nacimientos totales.
+- **Control (desde cero)**: se quedó en generación 1, pero con 30 nacimientos totales — más eventos de reproducción, aunque menos profundos.
+
+Sin señal clara a favor de sembrar. Motivo probable: un checkpoint tomado "a lo que sea que esté vivo en ese momento" no es lo mismo que un checkpoint de "los que mejor se reprodujeron" — es solo una muestra de supervivientes al azar, no necesariamente enriquecida en el rasgo que nos interesa (incubadora cableada + bien alimentados). Para que este experimento tenga sentido real, habría que filtrar el checkpoint a los individuos con mejor `pct_incubadora_wired`/mayor longevidad antes de guardarlo, no guardar la población entera tal cual quedó.
