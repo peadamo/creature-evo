@@ -16,13 +16,18 @@ class ControlPanel:
             {'label': 'Mutation rate x', 'attr': 'mutation_multiplier', 'min': 0.1, 'max': 5.0, 'obj': self}
         ]
         self.dragging = None
-        self.food_subsidy_button_rect = pygame.Rect(10, 130, 200, 30)
+        self.food_subsidy_button_rect = pygame.Rect(10, self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 10, 200, 30)
+
+    ROW_HEIGHT = 50
+    BAR_Y_OFFSET = 20  # deja lugar arriba para el label
+
+    def _bar_pos(self, index):
+        return 10, self.BAR_Y_OFFSET + index * self.ROW_HEIGHT
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            for slider in self.sliders:
-                bar_x, bar_y = 10, 10 + (self.sliders.index(slider) * 30)
-                bar_rect = pygame.Rect(bar_x, bar_y, 200, 20)
+            for i, slider in enumerate(self.sliders):
+                bar_x, bar_y = self._bar_pos(i)
                 handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
                 handle_rect = pygame.Rect(handle_x - 5, bar_y - 5, 10, 30)
                 if handle_rect.collidepoint(event.pos):
@@ -34,17 +39,17 @@ class ControlPanel:
                     amount = random.randint(5, 30)
                     self.world.food_pellets.append({'x': x, 'y': y, 'amount': amount})
         elif event.type == pygame.MOUSEMOTION and self.dragging:
-            bar_x, bar_y = 10, 10 + (self.sliders.index(self.dragging) * 30)
+            bar_x, bar_y = self._bar_pos(self.sliders.index(self.dragging))
             handle_x = max(0, min(event.pos[0] - bar_x, 200))
             new_value = self.dragging['min'] + (handle_x / 200) * (self.dragging['max'] - self.dragging['min'])
-            is_population_slider = self.dragging['attr'] in ('min_population', 'max_population')
-            setattr(self.dragging['obj'], self.dragging['attr'], int(new_value) if is_population_slider else new_value)
+            is_int_slider = self.dragging['attr'] in ('min_population', 'max_population', 'ticks_per_frame')
+            setattr(self.dragging['obj'], self.dragging['attr'], int(new_value) if is_int_slider else new_value)
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = None
 
     def draw(self, screen, font, fps):
-        for slider in self.sliders:
-            bar_x, bar_y = 10, 10 + (self.sliders.index(slider) * 30)
+        for i, slider in enumerate(self.sliders):
+            bar_x, bar_y = self._bar_pos(i)
             bar_rect = pygame.Rect(bar_x, bar_y, 200, 20)
             handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
             handle_rect = pygame.Rect(handle_x - 5, bar_y - 5, 10, 30)
@@ -54,7 +59,7 @@ class ControlPanel:
             is_population_slider = slider['attr'] in ('min_population', 'max_population')
             label = f"{slider['label']}: {int(raw_value) if is_population_slider else round(raw_value, 2)}"
             text_surface = font.render(label, True, (255, 255, 255))
-            screen.blit(text_surface, (bar_x, bar_y - 20))
+            screen.blit(text_surface, (bar_x, bar_y - 18))
 
         pygame.draw.rect(screen, (0, 128, 0), self.food_subsidy_button_rect)
         subsidy_label = "Food subsidy"
