@@ -24,6 +24,8 @@ class Creature:
                     self.neuron_thresholds[neuron_id] = params['thresholds'][i]
             else:
                 for param in params.keys():
+                    if block_type == 'actuador' and param == 'direccion':
+                        continue  # geometría fija del bloque, no es una señal
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{param}"
                     self.neurons[neuron_id] = 0.0
 

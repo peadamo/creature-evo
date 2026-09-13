@@ -1,9 +1,12 @@
+import math
+
 import numpy as np
 
 class Physics:
     def __init__(self, grid_size=(100, 100)):
         self.grid_size = grid_size
         self.creatures = []
+        self.velocities = {}
 
     def add_creature(self, creature, position=None):
         import random
@@ -14,25 +17,39 @@ class Physics:
             x, y = position
         creature.position = (x, y)  # Asignar posición inicial aleatoria dentro de los límites del grid
         self.creatures.append(creature)
+        self.velocities[id(creature)] = (0.0, 0.0)
 
     def update_positions(self):
+        grid_w, grid_h = self.grid_size
         for creature in self.creatures:
             x, y = creature.position
-            actuator_outputs = creature.get_actuator_outputs()
+            thrust_x, thrust_y = 0.0, 0.0
 
-            if len(actuator_outputs) == 0:
-                dx, dy = 0, 0
-            elif len(actuator_outputs) == 1:
-                dx = actuator_outputs[0] * 0.5
-                dy = actuator_outputs[0] * 0.5
-            else:
-                avg_output = sum(actuator_outputs) / len(actuator_outputs)
-                dx = avg_output * 0.5
-                dy = avg_output * 0.5
+            for block_type, bx, by, params in creature.genome.blocks:
+                if block_type != 'actuador':
+                    continue
+                impulso = creature.neurons.get(f"neuron_actuador_{bx}_{by}_impulso", 0.0)
+                impulso = max(0.0, min(1.0, impulso))
+                direccion = params.get('direccion', 0.0)
+                thrust_x += impulso * math.cos(direccion) * 0.3
+                thrust_y += impulso * math.sin(direccion) * 0.3
 
-            new_x = max(0, min(self.grid_size[0], x + dx))  # Asegurar que la nueva posición esté dentro de los límites del grid
-            new_y = max(0, min(self.grid_size[1], y + dy))
+            vx, vy = self.velocities.get(id(creature), (0.0, 0.0))
+            vx = (vx + thrust_x) * 0.85
+            vy = (vy + thrust_y) * 0.85
 
+            new_x = x + vx
+            new_y = y + vy
+
+            if new_x < 0 or new_x > grid_w:
+                vx = 0.0
+            if new_y < 0 or new_y > grid_h:
+                vy = 0.0
+
+            new_x = max(0, min(grid_w, new_x))
+            new_y = max(0, min(grid_h, new_y))
+
+            self.velocities[id(creature)] = (vx, vy)
             creature.position = (new_x, new_y)  # Actualizar posición de la criatura
 
     def handle_collisions(self):

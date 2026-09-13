@@ -39,7 +39,7 @@ class World:
             self.eggs.remove(egg)
         if creature_id in self.fat_levels:
             del self.fat_levels[creature_id]
-        self.physics.velocities.pop(id(creature), None)
+        self.physics.velocities.pop(creature_id, None)
 
     def update_sensors(self):
         for creature in self.creatures:

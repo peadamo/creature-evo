@@ -11,6 +11,11 @@ class Reproduction:
         self.innovation_id += 1
         return self.innovation_id
 
+    @staticmethod
+    def _neuron_param_keys(block_type, params):
+        # 'direccion' es geometría fija del bloque actuador, no una señal/neurona.
+        return [k for k in params.keys() if not (block_type == 'actuador' and k == 'direccion')]
+
     def mutate_genome(self, genome):
         new_genome = copy.deepcopy(genome)
         
@@ -49,7 +54,7 @@ class Reproduction:
                         for i in range(params.get('num_neurons', 0)):
                             valid_ids.add(f"neuron_{block_type}_{x}_{y}_{i}")
                     else:
-                        for param_key in params.keys():
+                        for param_key in self._neuron_param_keys(block_type, params):
                             valid_ids.add(f"neuron_{block_type}_{x}_{y}_{param_key}")
                 new_genome.connections = [
                     c for c in new_genome.connections if c[0] in valid_ids and c[1] in valid_ids
@@ -89,17 +94,21 @@ class Reproduction:
                         num_neurons = params.get('num_neurons', 0)
                         i = random.randint(0, num_neurons - 1)
                         origin_id = f"neuron_{block_type}_{x}_{y}_{i}"
-                    elif params:
-                        param_key = random.choice(list(params.keys()))
-                        origin_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
+                    else:
+                        keys = self._neuron_param_keys(block_type, params)
+                        if keys:
+                            param_key = random.choice(keys)
+                            origin_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
                 if block == dest_block:
                     if block_type == 'banco_neuronal':
                         num_neurons = params.get('num_neurons', 0)
                         i = random.randint(0, num_neurons - 1)
                         dest_id = f"neuron_{block_type}_{x}_{y}_{i}"
-                    elif params:
-                        param_key = random.choice(list(params.keys()))
-                        dest_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
+                    else:
+                        keys = self._neuron_param_keys(block_type, params)
+                        if keys:
+                            param_key = random.choice(keys)
+                            dest_id = f"neuron_{block_type}_{x}_{y}_{param_key}"
             
             if origin_id and dest_id:
                 weight = random.uniform(-1.0, 1.0)
