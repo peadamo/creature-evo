@@ -49,7 +49,8 @@ class World:
         self.creatures.append(creature)
         self.physics.add_creature(creature, position)
         self.energy.add_creature(id(creature))
-        self.fat_levels[id(creature)] = 0
+        # Criatura nace con depósitos de grasa LLENOS (almacenamiento garantizado)
+        self.fat_levels[id(creature)] = self.fat_capacity(creature)
         self.birth_tick[id(creature)] = self.tick_count
         self.generation[id(creature)] = generation
         self.max_generation_ever = max(self.max_generation_ever, generation)

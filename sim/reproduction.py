@@ -71,10 +71,10 @@ class Reproduction:
             # actuador, sin pasar por ningún cómputo intermedio) - ya
             # verificado que el motor de evaluación soporta esto sin
             # crashear. Es una estrategia de vida válida, no un error.
-            # Bloques garantizados (incubadora, boca, generador, actuador, sonar)
-            # NO pueden ser removidos todos: protegemos incubadora específicamente
-            # porque es garantizado al nacer y necesario para reproducirse.
-            guaranteed = {'incubadora', 'boca', 'generador', 'actuador', 'sonar'}
+            # Bloques garantizados (incubadora, boca, generador, actuador, sonar, almacenamiento)
+            # NO pueden ser removidos todos: protegemos estos específicamente
+            # porque son garantizados al nacer y esenciales para energía/reproducción.
+            guaranteed = {'incubadora', 'boca', 'generador', 'actuador', 'sonar', 'almacenamiento'}
             removable = [b for b in new_genome.blocks if b[0] not in guaranteed]
             if removable:
                 block_to_remove = random.choice(removable)

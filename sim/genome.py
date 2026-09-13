@@ -40,7 +40,7 @@ class Genome:
         # Sustento garantizado: sin esto la mayoría de las criaturas nace sin
         # forma de conseguir energía ni de percibir dónde está la comida, y
         # muere de inanición antes de que la evolución tenga chance de actuar.
-        for guaranteed_type in ('boca', 'generador', 'actuador', 'sonar', 'incubadora'):
+        for guaranteed_type in ('boca', 'generador', 'actuador', 'sonar', 'incubadora', 'almacenamiento'):
             x, y = random.randint(0, 10), random.randint(0, 10)
             genome.add_block(guaranteed_type, x, y, make_params(guaranteed_type))
             io_blocks.append((guaranteed_type, x, y))
@@ -60,7 +60,9 @@ class Genome:
             if block_type in ('boca', 'casco'):
                 continue  # sin neuronas propias, nada que conectar
             elif block_type == 'almacenamiento':
+                # Sensor reserva→banco + control banco→almacenamiento (opcional)
                 genome.add_connection(f'neuron_almacenamiento_{x}_{y}_reserva', bank_neuron(), random.uniform(-1.0, 1.0))
+                genome.add_connection(bank_neuron(), f"neuron_almacenamiento_{x}_{y}_suicidio", random.uniform(-1.0, 1.0))
             elif block_type == 'generador':
                 for _ in range(2):
                     genome.add_connection(bank_neuron(), f"neuron_generador_{x}_{y}_output", random.uniform(-1.0, 1.0))
