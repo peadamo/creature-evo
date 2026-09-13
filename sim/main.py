@@ -9,6 +9,7 @@ def main(num_ticks, visual=False):
 
     if visual:
         renderer = Renderer()
+        panel = ControlPanel(world)
         clock = pygame.time.Clock()
         running = True
 
