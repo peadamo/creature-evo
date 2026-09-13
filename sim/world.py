@@ -396,7 +396,9 @@ class World:
                 for block in creature.genome.blocks:
                     if block[0] == 'generador':
                         consumed_fat = min(3, available_fat)
-                        produced_amount = consumed_fat * (2/3)
+                        # Generador: consume 3 grasa, produce 10 energía (ganancia neta +7)
+                        # Fue (2/3) = 2 energía (pérdida neta), insostenible para reproducción
+                        produced_amount = consumed_fat * (10/3)
                         self.energy.produce_energy(id(creature), produced_amount)
                         self.fat_levels[id(creature)] -= consumed_fat
 
