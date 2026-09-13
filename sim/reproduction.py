@@ -55,7 +55,7 @@ class Reproduction:
             elif block_type == 'sonar':
                 params = {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
             elif block_type == 'incubadora':
-                params = {'desarrollo': 0.0, 'invertir': 0.0}
+                params = {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0}
             elif block_type == 'arma':
                 params = {'objetivo': 0.0}
             else:
