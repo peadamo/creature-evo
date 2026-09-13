@@ -154,3 +154,34 @@ class Creature:
     def get_actuator_outputs(self):
         actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]
         return actuator_outputs
+
+    def mutate_somatic(self, tick_count, mutation_rate=0.05):
+        """Aplicar mutaciones somáticas lentas durante la vida del individuo"""
+        # Cada tick: pequeña mutación de pesos
+        for connection in self.genome.connections:
+            if random.random() < mutation_rate:
+                origin, dest, weight, enabled = connection
+                # Cambiar peso ±5%
+                delta = random.uniform(-0.05, 0.05)
+                new_weight = max(-1.0, min(1.0, weight + delta))
+                idx = self.genome.connections.index(connection)
+                self.genome.connections[idx] = (origin, dest, new_weight, enabled)
+                # Actualizar en self.connections si existe
+                if (origin, dest) in self.connections:
+                    self.connections[(origin, dest)] = new_weight
+
+        # Cada 100 ticks: agregar/borrar conexión
+        if tick_count % 100 == 0 and len(self.genome.connections) > 5:
+            if random.random() < 0.5 and len(self.genome.connections) > 2:
+                # Borrar conexión
+                idx = random.randint(0, len(self.genome.connections) - 1)
+                removed = self.genome.connections.pop(idx)
+                self.connections.pop((removed[0], removed[1]), None)
+            else:
+                # Agregar conexión aleatoria
+                if len(self.genome.blocks) > 0:
+                    pass  # Más complejo, saltamos por ahora
+
+        # Cada 500 ticks: agregar bloque (muy raro)
+        if tick_count % 500 == 0 and random.random() < 0.1:
+            pass  # Implementar después si es necesario

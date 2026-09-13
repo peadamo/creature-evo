@@ -554,6 +554,10 @@ class World:
         for creature in self.creatures:
             creature.evaluate()
 
+        # Mutaciones somáticas (lentas, cada tick pequeño cambio de pesos)
+        for creature in self.creatures:
+            creature.mutate_somatic(self.tick_count, mutation_rate=0.02)
+
         # Aplicar suicidio de bloques: si neurona_suicidio > 0.5, remover bloque
         for creature in self.creatures[:]:
             for block_type, x, y, params in creature.genome.blocks[:]:
