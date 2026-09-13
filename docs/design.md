@@ -34,8 +34,13 @@ Esto significa que perder un sensor en batalla no solo te deja "ciega" — liter
 
 - No hay generaciones discretas. Población continua tipo ecosistema real.
 - Cada bloque activo consume energía por tick; `generador` la produce (ej. de una fuente ambiental tipo "sol"/campo de energía del mapa).
+  - **Generador**: consume 3 grasa/tick → produce 10 energía/tick (ganancia neta +7)
+  - **Almacenamiento**: bloque GARANTIZADO al nacer, capacidad 20+50×N grasa (N=bloques almac)
+  - **Nacimiento**: criaturas nacen con depósitos de grasa LLENOS (233+ energía disponible)
 - Matar a otra nave y/o recolectar recursos del entorno otorga energía.
 - Al acumular energía suficiente, una criatura se reproduce (asexual con mutación, o sexual si hay otra criatura cerca — a definir en iteración 2). La cría nace con un costo de energía para el progenitor.
+  - Costo reproducción: 15 energía por huevo
+  - Condición: tener inversor neuronal > 0.5 + grasa disponible
 - Sin energía suficiente, los bloques dejan de funcionar (no reciben corriente) y eventualmente la nave muere — esto es el "metabolismo".
 - **Control de población**: parámetro configurable de población objetivo mínima/máxima. UI expone un slider de rango razonable (0–1000) pero el valor real es un entero sin tope hardcodeado — si el usuario escribe 1,000,000 el sistema lo intenta (y se cae con la GPU que tenga, no por límite artificial de software).
 

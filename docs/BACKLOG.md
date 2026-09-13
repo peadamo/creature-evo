@@ -1,5 +1,27 @@
 # Backlog de features pendientes
 
+## ÚLTIMA SESIÓN: CAMBIOS IMPLEMENTADOS
+
+### ✅ Almacenamiento Garantizado
+- **Cambio**: `almacenamiento` es ahora bloque GARANTIZADO (como boca, generador, etc)
+- **Nacimiento**: Todas las criaturas nacen con depósitos de grasa LLENOS
+- **Energía inicial**: 70-120+ unidades (vs 20 sin almacenamiento)
+- **Impacto**: Población sostenible ~20 criaturas, pueden reproducirse inmediatamente
+- **Mutación**: Puede ser removido por evolución (no es obligatorio después de nacer)
+- **Cableado**: `reserva→banco` + `banco→suicidio`
+
+### ✅ Balance Energético
+- **Generador**: 3 grasa → 10 energía (fue 2, deficit neto)
+- **Resultado**: +7 energía neto por generador, población no muere de hambre
+
+### ✅ Bloques Garantizados (6 totales)
+1. boca — absorción comida
+2. generador — producción energía (10 energy/3 fat)
+3. actuador — movimiento
+4. sonar (radar_criaturas) — detección criaturas
+5. incubadora — reproducción
+6. almacenamiento — grasa + energía inicial llena
+
 ## Nuevas neuronas comunes a TODOS los bloques (propuesta del usuario)
 
 A implementar en iteraciones futuras. Estas neuronas darían a la red neuronal más control y observabilidad sobre el estado de cada bloque.
