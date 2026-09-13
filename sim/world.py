@@ -55,6 +55,10 @@ class World:
         self.food_distance_sum_since_log = 0.0
         self.food_distance_samples_since_log = 0
 
+        # Genealogía: registro de todos los individuos para resurrección de ancestros
+        self.genealogy = {}  # id(creature) → {'genome': Genome, 'generation': int, 'birth_tick': int, 'death_tick': int}
+        self.ancestors_pool = []  # lista de ancestros disponibles: [{'genome': Genome, 'generation': int, 'birth_tick': int, 'death_tick': int}]
+
     def is_daytime(self):
         return (self.tick_count % self.day_length) < (self.day_length / 2)
 
@@ -90,6 +94,14 @@ class World:
                 'generation': generation,
                 'birth_tick': self.tick_count
             })
+        # Registrar en genealogía
+        import copy
+        self.genealogy[id(creature)] = {
+            'genome': copy.deepcopy(genome),
+            'generation': generation,
+            'birth_tick': self.tick_count,
+            'death_tick': None
+        }
         return creature
 
     def fat_capacity(self, creature):
@@ -97,6 +109,34 @@ class World:
         base_capacity = 20
         storage_blocks_count = sum(1 for bt, _, _, _ in creature.genome.blocks if bt == 'almacenamiento')
         return base_capacity + 50 * storage_blocks_count
+
+    def select_ancestor(self):
+        """Seleccionar ancestro aleatorio con pesos inversamente proporcionales a distancia temporal"""
+        if not self.ancestors_pool:
+            return None
+
+        # Calcular pesos: más reciente = peso mayor
+        # Distancia = tick_count - death_tick (generación anterior)
+        # Peso = 1 / (distancia + 1) para evitar división por cero
+        weights = []
+        for ancestor in self.ancestors_pool:
+            distance = self.tick_count - ancestor['death_tick']
+            weight = 1.0 / (distance + 1)
+            weights.append(weight)
+
+        total_weight = sum(weights)
+        if total_weight == 0:
+            return random.choice(self.ancestors_pool)
+
+        # Weighted random selection
+        r = random.uniform(0, total_weight)
+        cumsum = 0
+        for ancestor, weight in zip(self.ancestors_pool, weights):
+            cumsum += weight
+            if r <= cumsum:
+                return ancestor
+
+        return self.ancestors_pool[-1]
 
     def kill_creature(self, creature_id):
         dying = next((c for c in self.creatures if id(c) == creature_id), None)
@@ -113,6 +153,11 @@ class World:
             # El cadáver se descompone en comida: costo = lo que invirtió madre + energía inicial
             body_food = max(50, len(dying.genome.blocks) * 25)
             self.food_pellets.append({'x': dying.position[0], 'y': dying.position[1], 'amount': body_food, 'created_tick': self.tick_count})
+
+            # Registrar muerte en genealogía (para resurrección de ancestros)
+            if creature_id in self.genealogy:
+                self.genealogy[creature_id]['death_tick'] = self.tick_count
+                self.ancestors_pool.append(self.genealogy[creature_id])
 
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
@@ -298,10 +343,11 @@ class World:
 
                     egg = self.creature_eggs.get(id(creature))
                     if not egg and invertir_value > 0:
-                        # Crear huevo: calcular capacidad según tamaño del hijo (estimado como tamaño padre + variación)
+                        # Crear DOS huevos: uno clon exacto y uno ancestro resucitado
                         num_bloques_estimado = len(creature.genome.blocks)
                         capacity = 10 + 2 * num_bloques_estimado
 
+                        # HUEVO 1: Clon exacto
                         egg = {
                             'x': creature.position[0],
                             'y': creature.position[1],
@@ -314,10 +360,32 @@ class World:
                             'created_tick': self.tick_count,
                             'last_progress': 0.0,
                             'last_progress_tick': self.tick_count,
+                            'is_ancestor': False,
                         }
                         self.eggs.append(egg)
                         self.creature_eggs[id(creature)] = egg
                         self.energy.produce_energy(id(creature), 15)
+
+                        # HUEVO 2: Ancestro resucitado (si hay ancestros disponibles)
+                        ancestor = self.select_ancestor()
+                        if ancestor:
+                            ancestor_egg = {
+                                'x': creature.position[0] + random.uniform(-3, 3),
+                                'y': creature.position[1] + random.uniform(-3, 3),
+                                'progress': 0.0,
+                                'capacity': 10 + 2 * len(ancestor['genome'].blocks),
+                                'phase': 'interno',
+                                'parent_genome': copy.deepcopy(ancestor['genome']),
+                                'parent_generation': ancestor['generation'],
+                                'parent_id': id(creature),  # se considera hijo del padre que lo resucita
+                                'created_tick': self.tick_count,
+                                'last_progress': 0.0,
+                                'last_progress_tick': self.tick_count,
+                                'is_ancestor': True,  # marca que es un huevo ancestro
+                                'ancestor_birth_tick': ancestor['birth_tick'],
+                            }
+                            self.eggs.append(ancestor_egg)
+                            self.energy.produce_energy(id(creature), 15)
 
                     if egg:
                         available_fat = self.fat_levels.get(id(creature), 0)
@@ -647,7 +715,29 @@ class World:
 
         if self.tick_count % 50 == 0 and len(self.food_pellets) < 40:
             for _ in range(15):
-                self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300), 'created_tick': self.tick_count})
+                # Seleccionar celda según food_generation (weighted random)
+                weights = [self.cell_grid[(cx, cy)]['food_generation'] for cx in range(10) for cy in range(10)]
+                total_weight = sum(weights)
+                if total_weight > 0:
+                    r = random.uniform(0, total_weight)
+                    cumsum = 0
+                    for cx in range(10):
+                        for cy in range(10):
+                            cumsum += self.cell_grid[(cx, cy)]['food_generation']
+                            if r <= cumsum:
+                                # Generar comida dentro de esta celda
+                                cell_size_w = self.physics.grid_size[0] / 10
+                                cell_size_h = self.physics.grid_size[1] / 10
+                                x = random.uniform(cx * cell_size_w, (cx + 1) * cell_size_w)
+                                y = random.uniform(cy * cell_size_h, (cy + 1) * cell_size_h)
+                                self.food_pellets.append({'x': x, 'y': y, 'amount': random.uniform(50, 300), 'created_tick': self.tick_count})
+                                break
+                        else:
+                            continue
+                        break
+                else:
+                    # Sin food_generation, posición aleatoria
+                    self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300), 'created_tick': self.tick_count})
 
     def export_lineage_csv(self, path='lineage.csv'):
         import csv

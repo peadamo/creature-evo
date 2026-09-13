@@ -103,8 +103,14 @@ class Renderer:
             progress_pct = min(1.0, egg['progress'] / egg['capacity'])
             radius = 3 + int(progress_pct * 6)
 
-            # Color según fase
-            color = (220, 180, 0) if egg['phase'] == 'interno' else (220, 220, 0)
+            # Color según fase y tipo (ancestro = rojo brillante)
+            is_ancestor = egg.get('is_ancestor', False)
+            if is_ancestor:
+                # Huevo ancestro: rojo brillante
+                color = (255, 50, 50) if egg['phase'] == 'interno' else (255, 100, 100)
+            else:
+                # Huevo normal: amarillo
+                color = (220, 180, 0) if egg['phase'] == 'interno' else (220, 220, 0)
             pygame.draw.circle(self.screen, color, (ex, ey), radius)
 
             # Barra de progreso arriba del huevo
