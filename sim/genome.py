@@ -10,7 +10,7 @@ class Genome:
     def random_initial(cls):
         genome = cls()
         bank_x, bank_y = 0, 0
-        num_bank_neurons = 5
+        num_bank_neurons = 8
         thresholds = [random.uniform(0.1, 0.6) for _ in range(num_bank_neurons)]
         genome.add_block('banco_neuronal', bank_x, bank_y, {'num_neurons': num_bank_neurons, 'thresholds': thresholds})
 
@@ -57,13 +57,16 @@ class Genome:
                 return f"neuron_banco_neuronal_{bank_x}_{bank_y}_{random.randint(0, num_bank_neurons - 1)}"
 
             if block_type == 'generador':
-                genome.add_connection(f"neuron_generador_{x}_{y}_output", bank_neuron(), random.uniform(-1.0, 1.0))
+                for _ in range(2):
+                    genome.add_connection(bank_neuron(), f"neuron_generador_{x}_{y}_output", random.uniform(-1.0, 1.0))
             elif block_type == 'sonar':
-                genome.add_connection(f"neuron_sonar_{x}_{y}_dx", bank_neuron(), random.uniform(-1.0, 1.0))
-                genome.add_connection(f"neuron_sonar_{x}_{y}_dy", bank_neuron(), random.uniform(-1.0, 1.0))
-                genome.add_connection(f"neuron_sonar_{x}_{y}_dx_comida", bank_neuron(), random.uniform(-1.0, 1.0))
-                genome.add_connection(f"neuron_sonar_{x}_{y}_dy_comida", bank_neuron(), random.uniform(-1.0, 1.0))
-                genome.add_connection(bank_neuron(), f"neuron_sonar_{x}_{y}_activo", random.uniform(-1.0, 1.0))
+                for _ in range(2):
+                    genome.add_connection(f"neuron_sonar_{x}_{y}_dx", bank_neuron(), random.uniform(-1.0, 1.0))
+                    genome.add_connection(f"neuron_sonar_{x}_{y}_dy", bank_neuron(), random.uniform(-1.0, 1.0))
+                    genome.add_connection(f"neuron_sonar_{x}_{y}_dx_comida", bank_neuron(), random.uniform(-1.0, 1.0))
+                    genome.add_connection(f"neuron_sonar_{x}_{y}_dy_comida", bank_neuron(), random.uniform(-1.0, 1.0))
+                for _ in range(2):
+                    genome.add_connection(bank_neuron(), f"neuron_sonar_{x}_{y}_activo", random.uniform(-1.0, 1.0))
             elif block_type == 'actuador':
                 genome.add_connection(bank_neuron(), f"neuron_actuador_{x}_{y}_impulso", random.uniform(-1.0, 1.0))
             elif block_type == 'incubadora':
