@@ -9,6 +9,7 @@ class ControlPanel:
         self.screen_width = screen_width
         self.ticks_per_frame = 1
         self.mutation_multiplier = 1.0
+        self.export_feedback_ticks = 0  # mostrar feedback de export por N ticks
         self.sliders = [
             {'label': 'Min pop', 'attr': 'min_population', 'min': 0, 'max': 1000, 'obj': world},
             {'label': 'Max pop', 'attr': 'max_population', 'min': 0, 'max': 1000, 'obj': world},
@@ -51,6 +52,7 @@ class ControlPanel:
                     self.world.food_pellets.append({'x': x, 'y': y, 'amount': amount})
             if self.log_snapshot_button_rect.collidepoint(event.pos):
                 self.world.export_creature_snapshot()
+                self.export_feedback_ticks = 60  # mostrar feedback por 60 frames
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             bar_x, bar_y = self._bar_pos(self.sliders.index(self.dragging))
             handle_x = max(0, min(event.pos[0] - bar_x, 200))
@@ -61,6 +63,13 @@ class ControlPanel:
             self.dragging = None
 
     def draw(self, screen, font, fps):
+        # Decrementar feedback timer
+        if self.export_feedback_ticks > 0:
+            self.export_feedback_ticks -= 1
+
+        # Detectar mouse position para hover
+        mouse_pos = pygame.mouse.get_pos()
+
         for i, slider in enumerate(self.sliders):
             bar_x, bar_y = self._bar_pos(i)
             bar_rect = pygame.Rect(bar_x, bar_y, 200, 20)
@@ -90,8 +99,17 @@ class ControlPanel:
         text_surface = font.render(subsidy_label, True, (255, 255, 255))
         screen.blit(text_surface, (self.food_subsidy_button_rect.x + 10, self.food_subsidy_button_rect.y + 5))
 
-        pygame.draw.rect(screen, (128, 0, 128), self.log_snapshot_button_rect)
-        log_label = "Export snapshot"
+        # Botón export: cambiar color si hover
+        is_hovering_export = self.log_snapshot_button_rect.collidepoint(mouse_pos)
+        export_color = (200, 0, 200) if is_hovering_export else (128, 0, 128)
+
+        # Si acaba de exportar, hacer el botón brillante
+        if self.export_feedback_ticks > 0:
+            export_color = (255, 100, 255)
+
+        pygame.draw.rect(screen, export_color, self.log_snapshot_button_rect)
+        pygame.draw.rect(screen, (255, 255, 255), self.log_snapshot_button_rect, 2)  # borde blanco
+        log_label = "Export snapshot" if self.export_feedback_ticks == 0 else "✓ Exported!"
         text_surface = font.render(log_label, True, (255, 255, 255))
         screen.blit(text_surface, (self.log_snapshot_button_rect.x + 10, self.log_snapshot_button_rect.y + 5))
 
