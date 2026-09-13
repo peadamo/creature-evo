@@ -38,14 +38,20 @@ A implementar en iteraciones futuras. Estas neuronas darían a la red neuronal m
 
 - [x] Implementar `hp_level` en todos los bloques (completado)
 - [x] Implementar `radar_parentesco` sensor (completado - calcula similitud genética)
-- [ ] Implementar `suicidio` en todos los bloques
-- [ ] Implementar `dormir` en todos los bloques
-- [ ] Testear que la evolución puede descubrir comportamientos de cuidado parental
+- [x] Implementar `suicidio` en todos los bloques (completado - auto-amputacion)
+- [x] Implementar `dormir` en todos los bloques (completado - hibernacion 50% energía)
+- [ ] Testear largas simulaciones para ver si evolución descubre nuevos comportamientos
+
+## Próximos pasos
+
+- Simular 10k+ ticks para observar evolución de comportamientos complejos
+- Agregar estadísticas para rastrear uso de suicidio/dormir en poblaciones
+- Implementar `huevo_propio_cercano` si es necesario para cuidado parental
 
 ## Notas recientes
 
-- Reproducción ahora funciona (10 huevos/50 ticks post-fix de pesos positivos)
-- radar_parentesco aparece en ~22% de genomas aleatorios
-- Similitud genética calculada con Hamming distance sobre bloques
-- Próximo: testear si evolución descubre cuidado parental usando radar_parentesco
+- **Reproducción funciona**: 10 huevos/50 ticks (fix: pesos positivos para invertir/liberar)
+- **radar_parentesco**: ~22% de probabilidad, similia genética Hamming distance
+- **suicidio**: auto-amputacion selectiva, bloques garantizados protegidos
+- **dormir**: hibernacion que reduce energía a 50% + detiene funciones del bloque
 
