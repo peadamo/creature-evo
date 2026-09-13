@@ -28,10 +28,17 @@ A implementar en iteraciones futuras. Estas neuronas darían a la red neuronal m
 - `dormir` requiere agregar un campo `dormido` booleano a cada bloque en Creature
 - Impacto en `Energy.consume_energy`: necesitaría chequear si un bloque está dormido antes de cobrar costo
 
+### 4. Neurona sensorial: `huevo_propio_cercano` (propuesta usuario)
+- **Ubicación**: solo `incubadora` 
+- **Función**: input que detecta si hay un huevo PROPIO en radio ~5.0
+- **Rango**: 0.0 si no hay, 1.0 si hay huevo propio cercano
+- **Aplicación evolutiva**: permite que la madre defienda/cuide activamente su huevo (seguirlo, protegerlo de depredadores)
+
 ## Estado
 
-- [ ] Implementar `hp_level` en todos los bloques
+- [x] Implementar `hp_level` en todos los bloques (completado)
 - [ ] Implementar `suicidio` en todos los bloques
 - [ ] Implementar `dormir` en todos los bloques
+- [ ] Implementar `huevo_propio_cercano` en incubadora
 - [ ] Testear que la evolución puede descubrir estos comportamientos
 
