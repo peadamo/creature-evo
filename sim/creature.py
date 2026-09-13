@@ -9,6 +9,7 @@ class Creature:
         self.connections = {}
         self.potentials = {}
         self.neuron_thresholds = {}
+        self.block_hp = {}  # Agregar diccionario para HP de bloques
 
         # Crear neuronas de borde y libres
         for block in self.genome.blocks:
@@ -56,6 +57,24 @@ class Creature:
                 self.potentials[neuron_id] = 0.0
             else:
                 self.neurons[neuron_id] = 0.0
+
+    def remove_block(self, block_type, x, y):
+        # Eliminar el bloque del genoma
+        self.genome.blocks = [block for block in self.genome.blocks if not (block[0] == block_type and block[1] == x and block[2] == y)]
+        
+        # Eliminar HP del bloque
+        self.block_hp.pop((block_type, x, y), None)
+        
+        # Eliminar neuronas asociadas al bloque
+        prefix = f'neuron_{block_type}_{x}_{y}_'
+        matching_neurons = [key for key in self.neurons if key.startswith(prefix)]
+        for neuron_id in matching_neurons:
+            del self.neurons[neuron_id]
+            self.potentials.pop(neuron_id, None)
+            self.neuron_thresholds.pop(neuron_id, None)
+        
+        # Eliminar conexiones asociadas al bloque
+        self.connections = [conn for conn in self.connections if not (conn[0].startswith(prefix) or conn[1].startswith(prefix))]
 
     def get_actuator_outputs(self):
         actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]

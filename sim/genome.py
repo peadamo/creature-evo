@@ -26,6 +26,8 @@ class Genome:
                 params = {}
             elif block_type == 'incubadora':
                 params = {'desarrollo': 0.0, 'invertir': 0.0}
+            elif block_type == 'arma':
+                params = {'objetivo': 0.0}
             elif block_type == 'generador':
                 params = {'output': 0.0}
             genome.add_block(block_type, x, y, params)
@@ -50,6 +52,8 @@ class Genome:
                 genome.add_connection(bank_neuron(), f"neuron_actuador_{x}_{y}_impulso", random.uniform(-1.0, 1.0))
             elif block_type == 'incubadora':
                 genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_invertir", random.uniform(-1.0, 1.0))
+            elif block_type == 'arma':
+                genome.add_connection(bank_neuron(), f'neuron_arma_{x}_{y}_objetivo', random.uniform(-1.0, 1.0))
 
         return genome
 

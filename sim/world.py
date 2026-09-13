@@ -140,6 +140,41 @@ class World:
                 self.eggs.remove(egg)
                 del self.creature_eggs[next(key for key, value in self.creature_eggs.items() if value == egg)]
 
+    def apply_combat(self):
+        target_types = ['banco_neuronal', 'sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma']
+        
+        for attacker in self.creatures:
+            for block_type, ax, ay, _ in attacker.genome.blocks:
+                if block_type == 'arma':
+                    nearest_distance = float('inf')
+                    nearest_victim = None
+                    
+                    for victim in self.creatures:
+                        if id(victim) != id(attacker):
+                            distance = np.linalg.norm(np.array(victim.position) - np.array(attacker.position))
+                            if distance < nearest_distance and distance <= 3.0:
+                                nearest_distance = distance
+                                nearest_victim = victim
+                    
+                    if nearest_victim:
+                        objetivo_value = attacker.neurons.get(f'neuron_arma_{ax}_{ay}_objetivo', 0)
+                        index = int(abs(objetivo_value) * 100) % len(target_types)
+                        preferred_type = target_types[index]
+                        
+                        matching_blocks = [block for block in nearest_victim.genome.blocks if block[0] == preferred_type]
+                        if not matching_blocks:
+                            matching_blocks = nearest_victim.genome.blocks
+                        
+                        if matching_blocks:
+                            block_to_attack = random.choice(matching_blocks)
+                            bt, bx, by, _ = block_to_attack
+                            
+                            nearest_victim.block_hp[(bt, bx, by)] = nearest_victim.block_hp.get((bt, bx, by), 30) - 10
+                            
+                            if nearest_victim.block_hp[(bt, bx, by)] <= 0:
+                                nearest_victim.remove_block(bt, bx, by)
+                                self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 15})
+        
     def apply_generators(self):
         for creature in self.creatures:
             available_fat = self.fat_levels.get(id(creature), 0)
@@ -178,6 +213,9 @@ class World:
 
         # Actualizar sensores
         self.update_sensors()
+
+        # Aplicar combate
+        self.apply_combat()
 
         # Absorber comida
         self.absorb_food()
