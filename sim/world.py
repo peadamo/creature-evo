@@ -348,6 +348,14 @@ class World:
         # Eclosión de huevos
         for egg in self.eggs[:]:
             if egg['progress'] >= egg['capacity']:
+                # Respetar límite de población: si ya hay max, el huevo se descarta
+                if len(self.creatures) >= self.max_creatures:
+                    self.eggs.remove(egg)
+                    owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
+                    if owner_key is not None:
+                        del self.creature_eggs[owner_key]
+                    continue
+
                 new_genome = self.reproduction.mutate_genome(egg['parent_genome'])
                 self.spawn_creature(new_genome, (egg['x'], egg['y']), generation=egg.get('parent_generation', 0) + 1, parent_id=egg.get('parent_id'))
                 self.eggs.remove(egg)
