@@ -62,19 +62,36 @@ class ControlPanel:
             # Click izquierdo: mutation field u otros
             if event.button != 1:
                 return
-            # Click izquierdo: editar celda con herramienta activa O crear mutation field
-            grid_w, grid_h = self.world.physics.grid_size
-            scale_x = self.screen_width / grid_w
-            scale_y = self.screen_height / grid_h
+            # Chequear buttons (export, food subsidy)
+            if self.food_subsidy_button_rect.collidepoint(event.pos) or self.log_snapshot_button_rect.collidepoint(event.pos):
+                if self.food_subsidy_button_rect.collidepoint(event.pos):
+                    grid_w, grid_h = self.world.physics.grid_size
+                    for _ in range(30):
+                        if self.world.creatures:
+                            base = random.choice(self.world.creatures).position
+                            x = max(0, min(grid_w, base[0] + random.uniform(-10, 10)))
+                            y = max(0, min(grid_h, base[1] + random.uniform(-10, 10)))
+                        else:
+                            x = random.uniform(0, grid_w)
+                            y = random.uniform(0, grid_h)
+                        amount = random.randint(80, 150)
+                        self.world.food_pellets.append({'x': x, 'y': y, 'amount': amount, 'created_tick': self.world.tick_count})
+                elif self.log_snapshot_button_rect.collidepoint(event.pos):
+                    self.world.export_creature_snapshot()
+                    self.export_feedback_ticks = 60
+                return
 
-            if event.pos[1] < self.screen_height * 0.95:
-                world_x = event.pos[0] / scale_x
-                world_y = event.pos[1] / scale_y
-                cx, cy = self.world.get_cell_at(world_x, world_y)
-                props = self.world.cell_grid[(cx, cy)]
-
-                # Si celda seleccionada, editar con herramienta
+            # Click izquierdo: editar celda SOLO si está seleccionada
+            if event.button == 1 and event.pos[1] < self.screen_height * 0.95:
                 if self.world.selected_cell:
+                    grid_w, grid_h = self.world.physics.grid_size
+                    scale_x = self.screen_width / grid_w
+                    scale_y = self.screen_height / grid_h
+                    world_x = event.pos[0] / scale_x
+                    world_y = event.pos[1] / scale_y
+                    cx, cy = self.world.get_cell_at(world_x, world_y)
+                    props = self.world.cell_grid[(cx, cy)]
+
                     shift_held = pygame.key.get_mods() & pygame.KMOD_SHIFT
                     if self.active_tool == 'mutation':
                         if shift_held:
@@ -91,35 +108,7 @@ class ControlPanel:
                             props['food_generation'] = max(0.0, props['food_generation'] - 0.1)
                         else:
                             props['food_generation'] = min(3.0, props['food_generation'] + 0.1)
-                else:
-                    # Mutation field
-                    self.mutation_field = {
-                        'x': world_x,
-                        'y': world_y,
-                        'radius': 4.0,
-                        'duration': 100
-                    }
-                return
-
-            if self.food_subsidy_button_rect.collidepoint(event.pos):
-                # Antes tiraba pellets chicos en posiciones 100% al azar del
-                # mapa - el efecto era invisible, se perdía entre la comida
-                # ya existente. Ahora: más cantidad, más grandes, y cerca de
-                # criaturas vivas para que el efecto se note al toque.
-                grid_w, grid_h = self.world.physics.grid_size
-                for _ in range(30):
-                    if self.world.creatures:
-                        base = random.choice(self.world.creatures).position
-                        x = max(0, min(grid_w, base[0] + random.uniform(-10, 10)))
-                        y = max(0, min(grid_h, base[1] + random.uniform(-10, 10)))
-                    else:
-                        x = random.uniform(0, grid_w)
-                        y = random.uniform(0, grid_h)
-                    amount = random.randint(80, 150)
-                    self.world.food_pellets.append({'x': x, 'y': y, 'amount': amount})
-            if self.log_snapshot_button_rect.collidepoint(event.pos):
-                self.world.export_creature_snapshot()
-                self.export_feedback_ticks = 60  # mostrar feedback por 60 frames
+                    return
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             bar_x, bar_y = self._bar_pos(self.sliders.index(self.dragging))
             handle_x = max(0, min(event.pos[0] - bar_x, 200))
