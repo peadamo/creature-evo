@@ -71,7 +71,9 @@ class Genome:
             elif block_type == 'actuador':
                 genome.add_connection(bank_neuron(), f"neuron_actuador_{x}_{y}_impulso", random.uniform(-1.0, 1.0))
             elif block_type == 'incubadora':
-                genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_invertir", random.uniform(-1.0, 1.0))
+                # Pesos hacia invertir/liberar deben ser positivos: son outputs que representan porcentajes (0-1)
+                genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_invertir", random.uniform(0.0, 1.0))
+                genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_liberar", random.uniform(0.0, 1.0))
             elif block_type == 'arma':
                 genome.add_connection(bank_neuron(), f'neuron_arma_{x}_{y}_objetivo', random.uniform(-1.0, 1.0))
 

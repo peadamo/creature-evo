@@ -76,7 +76,17 @@ class Creature:
             else:
                 self.neurons[neuron_id] = 0.0
 
-        # Pass C - Update sensory inputs (hp_level para cada bloque)
+        # Pass C - Apply connections to edge outputs (incubadora, sonar control, etc)
+        # Las neuronas de salida como invertir necesitan ser propagadas DESPUES de que el banco dispara
+        edge_outputs = {}
+        for (origin, dest), weight in self.connections.items():
+            if dest not in self.potentials:  # Es una neurona de borde/salida
+                edge_outputs[dest] = edge_outputs.get(dest, 0.0) + self.neurons[origin] * weight
+        for dest, value in edge_outputs.items():
+            if dest in self.neurons:
+                self.neurons[dest] = value
+
+        # Pass D - Update sensory inputs (hp_level para cada bloque)
         for block_type, x, y in self.block_hp.keys():
             hp_neuron_id = f"neuron_{block_type}_{x}_{y}_hp_level"
             max_hp = self.block_hp[(block_type, x, y)]
