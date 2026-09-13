@@ -14,6 +14,7 @@ class World:
     def __init__(self, min_population=20, max_population=50):
         import random
         self.min_population = min_population
+        self.max_creatures = max_population
         self.max_population = max_population
         self.creatures = []
         self.physics = Physics()
@@ -22,7 +23,7 @@ class World:
         self.tick_count = 0
         self.day_length = 500
         self.lineage_log = []
-        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300)} for _ in range(60)]
+        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300), 'created_tick': 0} for _ in range(60)]
         self.eggs = []
         self.creature_eggs = {}
         self.fat_levels = {}
@@ -83,7 +84,7 @@ class World:
 
             # El cadáver se descompone en comida, igual que un bloque destruido en combate.
             body_food = max(15, len(dying.genome.blocks) * 8)
-            self.food_pellets.append({'x': dying.position[0], 'y': dying.position[1], 'amount': body_food})
+            self.food_pellets.append({'x': dying.position[0], 'y': dying.position[1], 'amount': body_food, 'created_tick': self.tick_count})
 
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
@@ -279,6 +280,9 @@ class World:
                             'parent_genome': copy.deepcopy(creature.genome),
                             'parent_generation': self.generation.get(id(creature), 0),
                             'parent_id': id(creature),
+                            'created_tick': self.tick_count,
+                            'last_progress': 0.0,
+                            'last_progress_tick': self.tick_count,
                         }
                         self.eggs.append(egg)
                         self.creature_eggs[id(creature)] = egg
@@ -293,6 +297,11 @@ class World:
                         elif egg['phase'] == 'interno':
                             # Crecimiento LENTO si no hay grasa (evita congelación)
                             egg['progress'] += 0.1
+
+                        # Track progreso para GC
+                        if egg['progress'] > egg.get('last_progress', 0.0):
+                            egg['last_progress'] = egg['progress']
+                            egg['last_progress_tick'] = self.tick_count
 
                         # Decidir si liberar el huevo
                         viability_threshold = egg['capacity'] * 0.5
@@ -347,6 +356,26 @@ class World:
                     del self.creature_eggs[owner_key]
                 self.eggs_hatched_since_log += 1
 
+        # Garbage collection: eliminar huevos congelados o muy viejos
+        max_egg_stall_ticks = 500  # si no crece en 500 ticks, muere
+        max_egg_age_ticks = 2000   # si tiene >2000 ticks, muere (máximo)
+        for egg in self.eggs[:]:
+            age = self.tick_count - egg.get('created_tick', self.tick_count)
+            ticks_since_progress = self.tick_count - egg.get('last_progress_tick', self.tick_count)
+
+            # Congelado: si tiene <50% y no cambió en 500 ticks
+            if egg['progress'] < egg['capacity'] * 0.5 and ticks_since_progress > max_egg_stall_ticks:
+                self.eggs.remove(egg)
+                owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
+                if owner_key is not None:
+                    del self.creature_eggs[owner_key]
+            # Viejo: si tiene >2000 ticks de edad
+            elif age > max_egg_age_ticks:
+                self.eggs.remove(egg)
+                owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
+                if owner_key is not None:
+                    del self.creature_eggs[owner_key]
+
     def apply_combat(self):
         target_types = ['banco_neuronal', 'sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco']
         live_ids = {id(c) for c in self.creatures}
@@ -385,7 +414,7 @@ class World:
 
                             if nearest_victim.block_hp[(bt, bx, by)] <= 0:
                                 nearest_victim.remove_block(bt, bx, by)
-                                self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 15})
+                                self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 15, 'created_tick': self.tick_count})
                                 self.block_destroy_markers.append({
                                     'x': nearest_victim.position[0], 'y': nearest_victim.position[1],
                                     'ticks_left': 12,
@@ -554,9 +583,17 @@ class World:
         if self.tick_count % 20 == 0:
             self.log_summary()
 
+        # Garbage collection: eliminar comida vieja (>3000 ticks)
+        max_food_age_ticks = 3000
+        self.food_pellets = [p for p in self.food_pellets if self.tick_count - p.get('created_tick', self.tick_count) <= max_food_age_ticks]
+
+        # Limitar cantidad máxima de comida en pantalla a 300
+        if len(self.food_pellets) > 300:
+            self.food_pellets = self.food_pellets[:300]
+
         if self.tick_count % 50 == 0 and len(self.food_pellets) < 40:
             for _ in range(15):
-                self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300)})
+                self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300), 'created_tick': self.tick_count})
 
     def export_lineage_csv(self, path='lineage.csv'):
         import csv
