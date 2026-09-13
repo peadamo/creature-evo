@@ -18,7 +18,7 @@ class Genome:
                 return {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
             elif block_type == 'actuador':
                 return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
-            elif block_type in ('boca', 'almacenamiento'):
+            elif block_type in ('boca', 'almacenamiento', 'casco'):
                 return {}
             elif block_type == 'incubadora':
                 return {'desarrollo': 0.0, 'invertir': 0.0}
@@ -39,7 +39,7 @@ class Genome:
             io_blocks.append((guaranteed_type, x, y))
 
         for _ in range(random.randint(1, 3)):
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             genome.add_block(block_type, x, y, make_params(block_type))
             io_blocks.append((block_type, x, y))
@@ -47,7 +47,7 @@ class Genome:
         # Conectar cada bloque sensor/actuador/generador con una neurona aleatoria del banco,
         # para que haya señal fluyendo desde el arranque.
         for block_type, x, y in io_blocks:
-            if block_type in ('boca', 'almacenamiento'):
+            if block_type in ('boca', 'almacenamiento', 'casco'):
                 continue  # sin neuronas propias, nada que conectar
 
             def bank_neuron():

@@ -28,11 +28,11 @@ class Reproduction:
         }
         
         if random.random() < mutation_probabilities['add_block']:
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             if block_type == 'generador':
                 params = {'output': 0.0}
-            elif block_type in ('boca', 'almacenamiento'):
+            elif block_type in ('boca', 'almacenamiento', 'casco'):
                 params = {}
             elif block_type == 'sonar':
                 params = {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}

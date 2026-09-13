@@ -14,6 +14,14 @@ class Creature:
         # Crear neuronas de borde y libres
         for block in self.genome.blocks:
             block_type, x, y, params = block
+
+            if block_type == 'banco_neuronal':
+                self.block_hp[(block_type, x, y)] = 10
+            elif block_type == 'casco':
+                self.block_hp[(block_type, x, y)] = 50
+            else:
+                self.block_hp[(block_type, x, y)] = 30
+
             if block_type == 'banco_neuronal':
                 num_neurons = params.get('num_neurons', 0)
                 for i in range(num_neurons):
@@ -25,7 +33,6 @@ class Creature:
                     threshold = params['thresholds'][i]
                     self.potentials[neuron_id] = random.uniform(0.0, threshold)
                     self.neuron_thresholds[neuron_id] = threshold
-                    self.block_hp[(block_type, x, y)] = 10 if block_type == 'banco_neuronal' else 30
             else:
                 for param in params.keys():
                     if block_type == 'actuador' and param == 'direccion':
