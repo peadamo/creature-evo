@@ -44,6 +44,10 @@ class Creature:
                     neuron_id = f"neuron_{block_type}_{x}_{y}_{param}"
                     self.neurons[neuron_id] = 0.0
 
+                # Neurona dormir: output que desactiva el bloque si > 0.5
+                dormir_neuron_id = f"neuron_{block_type}_{x}_{y}_dormir"
+                self.neurons[dormir_neuron_id] = 0.0
+
         # Crear conexiones
         for connection in self.genome.connections:
             origin, dest, weight, enabled = connection
