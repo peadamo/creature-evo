@@ -21,7 +21,7 @@ class Renderer:
         scale_x = self.width / grid_w
         scale_y = self.height / grid_h
 
-        # Dibujar celdas con propiedades de color
+        # Dibujar celdas con propiedades visuales
         cell_size_w = grid_w / 10
         cell_size_h = grid_h / 10
         for cx in range(10):
@@ -31,7 +31,34 @@ class Renderer:
                 cell_y = cy * cell_size_h * scale_y
                 cell_w = cell_size_w * scale_x
                 cell_h = cell_size_h * scale_y
-                pygame.draw.rect(self.screen, props['color'], (cell_x, cell_y, cell_w, cell_h))
+
+                # Color base según food_generation (marrón → verde)
+                food_gen = props['food_generation']
+                t = max(0.0, min(1.0, (food_gen - 0.5) / 2.5))  # normalizar a 0-1
+                r = int(139 * (1 - t) + 34 * t)    # marrón → oscuro
+                g = int(69 * (1 - t) + 200 * t)    # oscuro → verde
+                b = int(19 * (1 - t) + 100 * t)    # oscuro → verde-azul
+                cell_color = (r, g, b)
+                pygame.draw.rect(self.screen, cell_color, (cell_x, cell_y, cell_w, cell_h))
+
+                # Patrón de líneas diagonales para mutación
+                mut = props['mutation_factor']
+                num_lines = int(mut * 3)  # 3-9 líneas según mutación
+                for i in range(num_lines):
+                    offset = i * int(cell_w / (num_lines + 1))
+                    pygame.draw.line(self.screen, (150, 150, 150),
+                                   (cell_x + offset, cell_y),
+                                   (cell_x + offset + int(cell_h), cell_y + int(cell_h)), 1)
+
+                # Puntos para energía cost
+                eng = props['energy_cost']
+                dot_size = int(max(1, min(3, eng)))
+                for dx in range(0, int(cell_w), int(cell_w / 4)):
+                    for dy in range(0, int(cell_h), int(cell_h / 4)):
+                        pygame.draw.circle(self.screen, (200, 100, 100),
+                                         (int(cell_x + dx), int(cell_y + dy)), dot_size)
+
+                # Borde
                 pygame.draw.rect(self.screen, (100, 100, 100), (cell_x, cell_y, cell_w, cell_h), 1)
 
         # Resaltar celda seleccionada
