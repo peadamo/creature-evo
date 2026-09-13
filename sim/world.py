@@ -30,6 +30,7 @@ class World:
                 self.cell_grid[(cx, cy)] = {
                     'mutation_factor': 1.0,
                     'energy_cost': 1.0,
+                    'food_generation': 1.0,  # tasa de generación de comida
                     'color': (30, 30, 30)  # gris neutro
                 }
         self.selected_cell = None  # (cx, cy) o None
