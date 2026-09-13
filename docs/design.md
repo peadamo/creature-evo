@@ -256,3 +256,9 @@ Sin señal clara a favor de sembrar. Motivo probable: un checkpoint tomado "a lo
 `World.is_daytime()` — 500 ticks por ciclo completo, mitad día/mitad noche. El `generador` solo produce energía (y consume grasa) de día; de noche no hace nada (no desperdicia grasa intentando y fallando). Fondo del visual cambia de gris oscuro a azul noche según la fase. Verificado el efecto real: energía neta promedio **+2.06/tick de día** vs. **-1.33/tick de noche** en una corrida de 2000 ticks — el ciclo tiene impacto de comportamiento real, no es solo cosmético.
 
 Bug encontrado y arreglado durante la implementación (Aider): el método `is_daytime()` quedó insertado accidentalmente **en medio de `World.__init__`**, cortando la inicialización a la mitad — `fat_levels`, `generation` y el resto de los atributos posteriores nunca se creaban, crasheaba en el primer tick. Confirma el patrón ya visto en esta sesión: conviene revisar con cuidado cada entrega de Aider, incluso cuando el mensaje de commit suena razonable.
+
+### 11.8 Revisión completa de código (madrugada, sin bugs graves nuevos)
+
+Lectura íntegra de `world.py` (512 líneas) tras varias sesiones de agregados (día/noche, linaje, checkpointing) buscando específicamente la clase de bug de la sección 10.6 (estado en vivo desincronizado del genoma heredable) y otros descuidos. No se encontró ningún bug de esa clase en ningún otro lado — el único punto de mutación de bloques/conexiones (`Creature.remove_block`) ya está corregido. Único hallazgo: `incubadora_wired` estaba duplicado (una vez como método de `World`, otra como función anidada idéntica dentro de `log_summary`) — solo cosmético, deduplicado.
+
+Estado general del código a esta altura: estable en corridas repetidas de 500-800 ticks, sin crashes conocidos pendientes.
