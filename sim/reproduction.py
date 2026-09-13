@@ -55,9 +55,14 @@ class Reproduction:
             new_genome.add_block(block_type, x, y, params)
         
         if random.random() < mutation_probabilities['remove_block']:
-            non_core_blocks = [block for block in new_genome.blocks if block[0] != 'banco_neuronal']
-            if non_core_blocks:
-                block_to_remove = random.choice(non_core_blocks)
+            # El banco neuronal ya no está protegido: una criatura puede
+            # evolucionar a deshacerse del "cerebro" por completo y
+            # sobrevivir a puro reflejo (sensor cableado directo a un
+            # actuador, sin pasar por ningún cómputo intermedio) - ya
+            # verificado que el motor de evaluación soporta esto sin
+            # crashear. Es una estrategia de vida válida, no un error.
+            if new_genome.blocks:
+                block_to_remove = random.choice(new_genome.blocks)
                 new_genome.blocks.remove(block_to_remove)
 
                 valid_ids = set()
