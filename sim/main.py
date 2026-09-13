@@ -20,7 +20,7 @@ def main(num_ticks, visual=False):
                 panel.handle_event(event)
 
             for _ in range(panel.ticks_per_frame):
-                world.tick()
+                world.tick(ui_panel=panel)
             renderer.draw(world, ui_panel=panel, fps=clock.get_fps())
             pygame.display.flip()
             clock.tick(30)  # Limitar a 30 FPS

@@ -10,6 +10,7 @@ class ControlPanel:
         self.ticks_per_frame = 1
         self.mutation_multiplier = 1.0
         self.export_feedback_ticks = 0  # mostrar feedback de export por N ticks
+        self.mutation_field = None  # {'x': x, 'y': y, 'radius': 15, 'duration': 100}
         self.sliders = [
             {'label': 'Min pop', 'attr': 'min_population', 'min': 0, 'max': 1000, 'obj': world},
             {'label': 'Max pop', 'attr': 'max_population', 'min': 0, 'max': 1000, 'obj': world},
@@ -28,6 +29,22 @@ class ControlPanel:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # Click en grilla (fuera de UI) → campo de mutación
+            ui_height = self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 50
+            if event.pos[1] > ui_height:  # Click en área de simulación
+                grid_w, grid_h = self.world.physics.grid_size
+                scale_x = self.screen_width / grid_w
+                scale_y = (pygame.display.get_surface().get_height() - ui_height) / grid_h
+                world_x = event.pos[0] / scale_x
+                world_y = (event.pos[1] - ui_height) / scale_y
+                self.mutation_field = {
+                    'x': world_x,
+                    'y': world_y,
+                    'radius': 15.0,
+                    'duration': 100
+                }
+                return  # No procesar más
+
             for i, slider in enumerate(self.sliders):
                 bar_x, bar_y = self._bar_pos(i)
                 handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
@@ -66,6 +83,12 @@ class ControlPanel:
         # Decrementar feedback timer
         if self.export_feedback_ticks > 0:
             self.export_feedback_ticks -= 1
+
+        # Decrementar duración del campo de mutación
+        if self.mutation_field and self.mutation_field['duration'] > 0:
+            self.mutation_field['duration'] -= 1
+        else:
+            self.mutation_field = None
 
         # Detectar mouse position para hover
         mouse_pos = pygame.mouse.get_pos()

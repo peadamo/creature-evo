@@ -90,6 +90,16 @@ class Renderer:
             alpha_color = (200, 80, 0)
             pygame.draw.circle(self.screen, alpha_color, (mx, my), radius, 2)
 
+        # Dibujar campo de mutación si existe
+        if ui_panel and ui_panel.mutation_field:
+            field = ui_panel.mutation_field
+            field_x = int(field['x'] * scale_x)
+            field_y = int(field['y'] * scale_y)
+            field_radius = int(field['radius'] * scale_x)
+            alpha = int(255 * (field['duration'] / 100))  # fade out
+            # Círculo semi-transparente rojo
+            pygame.draw.circle(self.screen, (255, 0, 0), (field_x, field_y), field_radius, 2)
+
         for creature in world.creatures:
             x, y = creature.position
             screen_x = int(x * scale_x)

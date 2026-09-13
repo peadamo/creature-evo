@@ -473,7 +473,7 @@ class World:
                                 self.food_pellets.remove(nearest_pellet)
                                 live_pellet_ids.discard(id(nearest_pellet))
 
-    def tick(self):
+    def tick(self, ui_panel=None):
         self.tick_count += 1
         if len(self.creatures) < self.min_population:
             for _ in range(self.min_population - len(self.creatures)):
@@ -555,8 +555,10 @@ class World:
             creature.evaluate()
 
         # Mutaciones somáticas (lentas, cada tick pequeño cambio de pesos)
+        # Pasar campo de mutación si existe (desde UI)
+        mutation_field = ui_panel.mutation_field if ui_panel else None
         for creature in self.creatures:
-            creature.mutate_somatic(self.tick_count, mutation_rate=0.02)
+            creature.mutate_somatic(self.tick_count, mutation_rate=0.02, mutation_field=mutation_field, world_position=creature.position)
 
         # Aplicar suicidio de bloques: si neurona_suicidio > 0.5, remover bloque
         for creature in self.creatures[:]:

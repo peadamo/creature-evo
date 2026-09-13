@@ -155,8 +155,14 @@ class Creature:
         actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]
         return actuator_outputs
 
-    def mutate_somatic(self, tick_count, mutation_rate=0.05):
+    def mutate_somatic(self, tick_count, mutation_rate=0.05, mutation_field=None, world_position=(0, 0)):
         """Aplicar mutaciones somáticas lentas durante la vida del individuo"""
+        # Si está en campo de mutación, duplicar tasa
+        if mutation_field and world_position:
+            dist = ((mutation_field['x'] - world_position[0])**2 + (mutation_field['y'] - world_position[1])**2)**0.5
+            if dist < mutation_field['radius']:
+                mutation_rate *= 2.0
+
         # Cada tick: pequeña mutación de pesos
         for connection in self.genome.connections:
             if random.random() < mutation_rate:
