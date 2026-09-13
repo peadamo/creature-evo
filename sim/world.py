@@ -421,7 +421,7 @@ class World:
                     impulso = creature.neurons.get(f"neuron_actuador_{x}_{y}_impulso", 0)
                     cost += 2 * max(0.0, min(1.0, impulso))
                 elif block_type == 'almacenamiento':
-                    pass  # No tiene costo
+                    creature.neurons[f'neuron_almacenamiento_{x}_{y}_reserva'] = min(1.0, self.fat_levels.get(id(creature), 0) / self.fat_capacity(creature))
                 elif block_type == 'generador':
                     pass  # Costo gestionado en apply_generators
                 elif block_type == 'boca':
