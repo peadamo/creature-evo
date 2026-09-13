@@ -22,7 +22,7 @@ class World:
         self.tick_count = 0
         self.day_length = 500
         self.lineage_log = []
-        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(60)]
+        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300)} for _ in range(60)]
         self.eggs = []
         self.creature_eggs = {}
         self.fat_levels = {}
@@ -431,7 +431,7 @@ class World:
 
         if self.tick_count % 50 == 0 and len(self.food_pellets) < 40:
             for _ in range(15):
-                self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)})
+                self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(50, 300)})
 
     def export_lineage_csv(self, path='lineage.csv'):
         import csv
