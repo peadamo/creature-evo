@@ -567,10 +567,17 @@ class World:
         self.physics.update_positions()
         self.physics.handle_collisions()
 
-        # Muerte por energía agotada
+        # Muerte por energía agotada o vejez
+        max_lifespan_ticks = 5000  # criatura muere después de 5000 ticks
         for creature in self.creatures[:]:
-            if self.energy.check_death(id(creature)):
-                self.kill_creature(id(creature))
+            creature_id = id(creature)
+            age = self.tick_count - self.birth_tick.get(creature_id, self.tick_count)
+
+            if self.energy.check_death(creature_id):
+                self.kill_creature(creature_id)
+            elif age > max_lifespan_ticks:
+                # Muerte por vejez
+                self.kill_creature(creature_id)
 
         # Decaimiento de los marcadores visuales (muerte, ataque, bloque destruido)
         for marker in self.death_markers[:]:
