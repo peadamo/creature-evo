@@ -20,6 +20,10 @@ class World:
         self.energy = Energy()
         self.reproduction = Reproduction()
         self.tick_count = 0
+        self.day_length = 500
+
+    def is_daytime(self):
+        return (self.tick_count % self.day_length) < (self.day_length / 2)
         self.lineage_log = []
         self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(60)]
         self.eggs = []
@@ -318,14 +322,15 @@ class World:
                                     live_ids.discard(id(nearest_victim))
         
     def apply_generators(self):
-        for creature in self.creatures:
-            available_fat = self.fat_levels.get(id(creature), 0)
-            for block in creature.genome.blocks:
-                if block[0] == 'generador':
-                    consumed_fat = min(3, available_fat)
-                    produced_amount = consumed_fat * (2/3)
-                    self.energy.produce_energy(id(creature), produced_amount)
-                    self.fat_levels[id(creature)] -= consumed_fat
+        if self.is_daytime():
+            for creature in self.creatures:
+                available_fat = self.fat_levels.get(id(creature), 0)
+                for block in creature.genome.blocks:
+                    if block[0] == 'generador':
+                        consumed_fat = min(3, available_fat)
+                        produced_amount = consumed_fat * (2/3)
+                        self.energy.produce_energy(id(creature), produced_amount)
+                        self.fat_levels[id(creature)] -= consumed_fat
 
     def absorb_food(self):
         live_pellet_ids = {id(p) for p in self.food_pellets}

@@ -12,7 +12,10 @@ class Renderer:
         self.block_count_font = pygame.font.SysFont(None, 16, bold=True)
 
     def draw(self, world, ui_panel=None, fps=0):
-        self.screen.fill((0, 0, 0))  # Limpiar la pantalla con negro
+        if world.is_daytime():
+            self.screen.fill((20, 20, 20))  # Día: fondo ligeramente más claro
+        else:
+            self.screen.fill((10, 10, 40))  # Noche: fondo azul oscuro
 
         grid_w, grid_h = world.physics.grid_size
         scale_x = self.width / grid_w
