@@ -30,14 +30,16 @@ class ControlPanel:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Click en grilla (fuera de UI) → campo de mutación
-            ui_height = self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 50
-            if event.pos[1] > ui_height:  # Click en área de simulación
-                grid_w, grid_h = self.world.physics.grid_size
-                scale_x = self.screen_width / grid_w
-                scale_y = (self.screen_height - ui_height) / grid_h
+            # Click en grilla → campo de mutación
+            # Usar mismas escalas que render.py
+            grid_w, grid_h = self.world.physics.grid_size
+            scale_x = self.screen_width / grid_w
+            scale_y = self.screen_height / grid_h
+
+            # Si click está en área de simulación (aprox. los primeros 900px de altura)
+            if event.pos[1] < self.screen_height * 0.95:
                 world_x = event.pos[0] / scale_x
-                world_y = (event.pos[1] - ui_height) / scale_y
+                world_y = event.pos[1] / scale_y
                 self.mutation_field = {
                     'x': world_x,
                     'y': world_y,
