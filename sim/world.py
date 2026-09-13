@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from sim.creature import Creature
 from sim.physics import Physics
@@ -83,7 +85,7 @@ class World:
 
             for other_creature in self.creatures:
                 if id(other_creature) != id(creature):
-                    distance = np.linalg.norm(np.array(other_creature.position) - np.array(creature.position))
+                    distance = math.hypot(other_creature.position[0]-creature.position[0], other_creature.position[1]-creature.position[1])
                     if distance < nearest_distance:
                         nearest_distance = distance
                         nearest_creature = other_creature
@@ -97,7 +99,7 @@ class World:
             nearest_food_distance = float('inf')
             nearest_food = None
             for pellet in self.food_pellets:
-                distance = np.linalg.norm(np.array([pellet['x'], pellet['y']]) - np.array(creature.position))
+                distance = math.hypot(pellet['x']-creature.position[0], pellet['y']-creature.position[1])
                 if distance < nearest_food_distance:
                     nearest_food_distance = distance
                     nearest_food = pellet
@@ -277,7 +279,7 @@ class World:
                     
                     for victim in self.creatures:
                         if id(victim) != id(attacker):
-                            distance = np.linalg.norm(np.array(victim.position) - np.array(attacker.position))
+                            distance = math.hypot(victim.position[0]-attacker.position[0], victim.position[1]-attacker.position[1])
                             if distance < nearest_distance and distance <= 3.0:
                                 nearest_distance = distance
                                 nearest_victim = victim
@@ -324,7 +326,7 @@ class World:
                     nearest_distance = float('inf')
                     nearest_pellet = None
                     for pellet in self.food_pellets:
-                        distance = np.linalg.norm(np.array([pellet['x'], pellet['y']]) - np.array(creature.position))
+                        distance = math.hypot(pellet['x']-creature.position[0], pellet['y']-creature.position[1])
                         if distance < nearest_distance and distance <= 2.0:
                             nearest_distance = distance
                             nearest_pellet = pellet
