@@ -47,6 +47,23 @@ class Creature:
                     direccion_neuron = f"neuron_{block_type}_{x}_{y}_direccion"
                     self.neurons[direccion_neuron] = 0.0
 
+                # Sonar: sensores de comida y huevos
+                if block_type == 'sonar':
+                    self.neurons[f"neuron_sonar_{x}_{y}_dx"] = 0.0
+                    self.neurons[f"neuron_sonar_{x}_{y}_dy"] = 0.0
+                    self.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = 0.0
+                    self.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = 0.0
+                    self.neurons[f"neuron_sonar_{x}_{y}_dx_huevo"] = 0.0
+                    self.neurons[f"neuron_sonar_{x}_{y}_dy_huevo"] = 0.0
+                    self.neurons[f"neuron_sonar_{x}_{y}_activo"] = 0.0
+
+                # Radar de parentesco: sensores de huevos
+                if block_type == 'radar_parentesco':
+                    self.neurons[f"neuron_radar_parentesco_{x}_{y}_dx"] = 0.0
+                    self.neurons[f"neuron_radar_parentesco_{x}_{y}_dy"] = 0.0
+                    self.neurons[f"neuron_radar_parentesco_{x}_{y}_parentesco"] = 0.0
+                    self.neurons[f"neuron_radar_parentesco_{x}_{y}_activo"] = 0.0
+
                 # Neurona dormir: output que desactiva el bloque si > 0.5
                 dormir_neuron_id = f"neuron_{block_type}_{x}_{y}_dormir"
                 self.neurons[dormir_neuron_id] = 0.0

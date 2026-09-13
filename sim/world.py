@@ -14,7 +14,6 @@ class World:
     def __init__(self, min_population=20, max_population=50):
         import random
         self.min_population = min_population
-        self.max_creatures = max_population
         self.max_population = max_population
         self.creatures = []
         self.physics = Physics()
@@ -82,8 +81,8 @@ class World:
             cause = 'starvation' if had_brain else 'starvation_brain_dead'
             self.death_causes_since_log[cause] = self.death_causes_since_log.get(cause, 0) + 1
 
-            # El cadáver se descompone en comida, igual que un bloque destruido en combate.
-            body_food = max(15, len(dying.genome.blocks) * 8)
+            # El cadáver se descompone en comida: costo = lo que invirtió madre + energía inicial
+            body_food = max(50, len(dying.genome.blocks) * 25)
             self.food_pellets.append({'x': dying.position[0], 'y': dying.position[1], 'amount': body_food, 'created_tick': self.tick_count})
 
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
@@ -173,6 +172,9 @@ class World:
                     creature.neurons[f"neuron_sonar_{x}_{y}_dy"] = dy
                     creature.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = dx_comida
                     creature.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = dy_comida
+                    # Huevos detectables como comida alternativa
+                    creature.neurons[f"neuron_sonar_{x}_{y}_dx_huevo"] = dx_huevo
+                    creature.neurons[f"neuron_sonar_{x}_{y}_dy_huevo"] = dy_huevo
                 elif block[0] == 'radar_parentesco':
                     x, y = block[1], block[2]
                     creature.neurons[f"neuron_radar_parentesco_{x}_{y}_dx"] = dx_huevo
@@ -422,7 +424,7 @@ class World:
 
                             if nearest_victim.block_hp[(bt, bx, by)] <= 0:
                                 nearest_victim.remove_block(bt, bx, by)
-                                self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 15, 'created_tick': self.tick_count})
+                                self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 40, 'created_tick': self.tick_count})
                                 self.block_destroy_markers.append({
                                     'x': nearest_victim.position[0], 'y': nearest_victim.position[1],
                                     'ticks_left': 12,

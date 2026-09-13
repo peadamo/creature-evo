@@ -73,6 +73,9 @@ class Genome:
                     genome.add_connection(f"neuron_sonar_{x}_{y}_dy", bank_neuron(), random.uniform(-1.0, 1.0))
                     genome.add_connection(f"neuron_sonar_{x}_{y}_dx_comida", bank_neuron(), random.uniform(-1.0, 1.0))
                     genome.add_connection(f"neuron_sonar_{x}_{y}_dy_comida", bank_neuron(), random.uniform(-1.0, 1.0))
+                    # Huevos detectables como comida alternativa
+                    genome.add_connection(f"neuron_sonar_{x}_{y}_dx_huevo", bank_neuron(), random.uniform(-1.0, 1.0))
+                    genome.add_connection(f"neuron_sonar_{x}_{y}_dy_huevo", bank_neuron(), random.uniform(-1.0, 1.0))
                 for _ in range(2):
                     genome.add_connection(bank_neuron(), f"neuron_sonar_{x}_{y}_activo", random.uniform(-1.0, 1.0))
             elif block_type == 'actuador':
@@ -86,6 +89,10 @@ class Genome:
                 genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_liberar", random.uniform(0.0, 1.0))
             elif block_type == 'radar_parentesco':
                 # Sensor de parentesco: inputs del mundo (dx, dy, parentesco)
+                for _ in range(2):
+                    genome.add_connection(f"neuron_radar_parentesco_{x}_{y}_dx", bank_neuron(), random.uniform(-1.0, 1.0))
+                    genome.add_connection(f"neuron_radar_parentesco_{x}_{y}_dy", bank_neuron(), random.uniform(-1.0, 1.0))
+                    genome.add_connection(f"neuron_radar_parentesco_{x}_{y}_parentesco", bank_neuron(), random.uniform(-1.0, 1.0))
                 # Output activo conectado al banco para activar/desactivar el scanning
                 for _ in range(2):
                     genome.add_connection(bank_neuron(), f"neuron_radar_parentesco_{x}_{y}_activo", random.uniform(-1.0, 1.0))

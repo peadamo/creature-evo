@@ -122,7 +122,7 @@ class Renderer:
         max_generation = getattr(world, 'max_generation_ever', 0)
         stats_lines = [
             f"Tick: {world.tick_count}",
-            f"Población: {population} / {world.max_creatures}",
+            f"Población: {population} / {world.max_population}",
             f"Gen máx: {max_generation}",
             f"Vida max: {world.max_lifespan_ever}",
             f"Vida promedio (500t): {round(sum(l for _, l in world.lifespan_history) / len(world.lifespan_history), 1) if world.lifespan_history else 0}",
