@@ -19,8 +19,10 @@ class Genome:
                 return {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
             elif block_type == 'actuador':
                 return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
-            elif block_type in ('boca', 'almacenamiento', 'casco'):
+            elif block_type in ('boca', 'casco'):
                 return {}
+            elif block_type == 'almacenamiento':
+                return {'reserva': 0.0}
             elif block_type == 'incubadora':
                 return {'desarrollo': 0.0, 'invertir': 0.0}
             elif block_type == 'arma':
