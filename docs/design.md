@@ -175,3 +175,15 @@ Con el color ahora heredado (sección 8), medí la distancia de color RGB entre 
 ### 10.4 Optimización de performance
 
 Perfilado con `cProfile` (100-150 población, 200 ticks) mostró que 32 de 59 segundos se iban en `np.linalg.norm` para calcular distancias 2D simples (13M llamadas, overhead de numpy desproporcionado para un cálculo trivial). Reemplazado por `math.hypot` en las 4 ubicaciones (`update_sensors`, `absorb_food`, `apply_combat`): **47x más rápido** (59s → 1.26s mismo trabajo). Sin cambio de comportamiento, solo velocidad.
+
+Además: el sistema escalaba O(n²) (1000 población: 242ms/tick). Se agregó `sim/spatial_grid.py`, un índice espacial en grilla para las 3 búsquedas de vecino más cercano (creatura más cercana, comida más cercana, víctima de combate más cercana), validado contra fuerza bruta (0 errores en 300 puntos random) antes de integrarlo. Resultado: 1000 población pasó de 242ms a 31ms/tick (~7.7x), escalando ahora casi lineal.
+
+### 10.5 Selección natural real y visible (buena noticia)
+
+Comparando gen-0 vs gen-1 en una corrida de 4000 ticks: los hijos (gen-1, n=18) viven más en promedio (61.6 ticks) que la población general (37.1), y el 100% tiene el bloque `incubadora` cableado — contra solo 23% en la población general (tasa base de aparición al azar). Es decir, **la selección está funcionando**: los que logran reproducirse tienden a tener rasgos que favorecen reproducirse de nuevo. El cuello de botella para que esto se sostenga no es que los hijos sean peores — es que el evento de reproducción exitosa en sí sigue siendo raro a nivel población (18 gen-1 sobre >2000 nacimientos totales en la corrida), por lo que el linaje tarda en compunding profundo antes de que la muestra se apague por azar.
+
+### 10.6 Bug heredable raro: conexión colgante pasada de padre a hijo (encontrado durante el análisis de linajes)
+
+Mientras se investigaba por qué los linajes no se sostienen, apareció un crash nuevo (`KeyError` en `Creature.evaluate()`, buscando una neurona de banco que no existía) — no reproducible con 29 semillas distintas de 3000 ticks, señal de que era genuinamente raro, no un bug determinista fácil de disparar.
+
+Causa real: `Creature.remove_block()` (llamado cuando el combate destruye un bloque) limpiaba las conexiones del diccionario en memoria de esa instancia (`self.connections`), pero **nunca tocaba `self.genome.connections`** (la lista que efectivamente viaja al hijo vía `copy.deepcopy` cuando esa criatura pone un huevo). Si una criatura perdía un bloque en combate y **después** lograba reproducirse, el genoma heredado por su cría conservaba una conexión colgante hacia una neurona ya destruida — y la cría explotaba al construirse. Por eso era tan raro: hacían falta ambos eventos (perder un bloque Y reproducirse después) en la misma criatura, y ambos son individualmente poco frecuentes. Arreglado: `remove_block` ahora limpia ambas listas.
