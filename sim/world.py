@@ -438,6 +438,39 @@ class World:
             for entry in self.lineage_log:
                 writer.writerow([entry['child_id'], entry['parent_id'], entry['generation'], entry['birth_tick']])
 
+    def save_population(self, path='checkpoint.json'):
+        import json
+
+        data = {
+            'metadata': {
+                'tick_count': self.tick_count,
+                'max_generation_ever': self.max_generation_ever
+            },
+            'genomes': [creature.genome.to_dict() for creature in self.creatures]
+        }
+
+        with open(path, 'w') as file:
+            json.dump(data, file)
+
+    def load_population(self, path='checkpoint.json'):
+        import json
+
+        with open(path, 'r') as file:
+            data = json.load(file)
+
+        # Limpiar estados de criaturas
+        self.creatures.clear()
+        self.fat_levels.clear()
+        self.energy.energy_levels.clear()
+        self.birth_tick.clear()
+        self.generation.clear()
+        self.physics.velocities.clear()
+        self.physics.creatures.clear()
+
+        for genome_dict in data['genomes']:
+            genome = Genome.from_dict(genome_dict)
+            self.spawn_creature(genome, generation=0)  # Generación reseteada a 0
+
     def run(self, num_ticks):
         for _ in range(num_ticks):
             self.tick()

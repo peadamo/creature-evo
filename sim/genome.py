@@ -76,3 +76,18 @@ class Genome:
 
     def add_connection(self, origin, dest, weight, enabled=True):
         self.connections.append((origin, dest, weight, enabled))
+
+    def to_dict(self):
+        return {
+            'blocks': [[block_type, x, y, params] for block_type, x, y, params in self.blocks],
+            'connections': [[origin, dest, weight, enabled] for origin, dest, weight, enabled in self.connections],
+            'color': list(self.color)
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        genome = cls()
+        genome.blocks = [(block_type, x, y, params) for block_type, x, y, params in d['blocks']]
+        genome.connections = [(origin, dest, weight, enabled) for origin, dest, weight, enabled in d['connections']]
+        genome.color = tuple(d['color'])
+        return genome
