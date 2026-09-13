@@ -9,11 +9,7 @@ class Physics:
 
     def temperature_at(self, x, y):
         """Returns the temperature at a given position (x, y) in the grid."""
-        temp = 1.0 + 2.0 * math.exp(-((x-25)**2+(y-25)**2)/500) + 2.0 * math.exp(-((x-75)**2+(y-75)**2)/500)
-        return temp
-        self.grid_size = grid_size
-        self.creatures = []
-        self.velocities = {}
+        return 1.0 + 2.0 * math.exp(-((x-25)**2+(y-25)**2)/500) + 2.0 * math.exp(-((x-75)**2+(y-75)**2)/500)
 
     def add_creature(self, creature, position=None):
         import random

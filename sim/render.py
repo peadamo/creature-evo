@@ -21,6 +21,25 @@ class Renderer:
         scale_x = self.width / grid_w
         scale_y = self.height / grid_h
 
+        # Mapa de calor de temperatura: grilla gruesa de 10x10 celdas, azul
+        # (frío, temp~1.0) a naranja (caliente, temp~5.0 cerca de los focos).
+        cells = 10
+        cell_w = grid_w / cells
+        cell_h = grid_h / cells
+        for cx in range(cells):
+            for cy in range(cells):
+                center_x = (cx + 0.5) * cell_w
+                center_y = (cy + 0.5) * cell_h
+                temp = world.physics.temperature_at(center_x, center_y)
+                t = max(0.0, min(1.0, (temp - 1.0) / 4.0))
+                color = (
+                    int(0 + t * 150),
+                    int(0 + t * 30),
+                    int(100 - t * 100),
+                )
+                rect = pygame.Rect(cx * cell_w * scale_x, cy * cell_h * scale_y, cell_w * scale_x, cell_h * scale_y)
+                pygame.draw.rect(self.screen, color, rect)
+
         for pellet in getattr(world, 'food_pellets', []):
             px = int(pellet['x'] * scale_x)
             py = int(pellet['y'] * scale_y)

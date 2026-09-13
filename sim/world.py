@@ -399,6 +399,7 @@ class World:
                 elif block_type == 'boca':
                     pass  # No tiene costo
 
+            cost *= self.physics.temperature_at(creature.position[0], creature.position[1])
             self.energy.consume_energy(id(creature), cost)
 
         # Reproducción ahora sucede solo vía incubadora/huevos
