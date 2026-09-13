@@ -615,6 +615,47 @@ class World:
             for entry in self.lineage_log:
                 writer.writerow([entry['child_id'], entry['parent_id'], entry['generation'], entry['birth_tick']])
 
+    def export_creature_snapshot(self, path='creature_snapshot.json'):
+        import json
+        snapshot = {
+            'tick': self.tick_count,
+            'population': len(self.creatures),
+            'creatures': []
+        }
+        for creature in self.creatures:
+            creature_data = {
+                'id': id(creature),
+                'generation': self.generation.get(id(creature), 0),
+                'energy': self.energy.energy_levels.get(id(creature), 0),
+                'fat': self.fat_levels.get(id(creature), 0),
+                'position': creature.position,
+                'blocks': [
+                    {
+                        'type': bt,
+                        'x': x,
+                        'y': y,
+                        'params': params
+                    }
+                    for bt, x, y, params in creature.genome.blocks
+                ],
+                'connections': [
+                    {
+                        'origin': origin,
+                        'dest': dest,
+                        'weight': weight,
+                        'enabled': enabled
+                    }
+                    for origin, dest, weight, enabled in creature.genome.connections
+                ],
+                'neurons': {k: v for k, v in creature.neurons.items()},
+                'color': creature.genome.color
+            }
+            snapshot['creatures'].append(creature_data)
+
+        with open(path, 'w') as f:
+            json.dump(snapshot, f, indent=2)
+        print(f"Snapshot exported to {path}")
+
     def save_successful_population(self, path='checkpoint_successful.json', min_blocks=5):
         successful_creatures = [
             c for c in self.creatures if any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks) and

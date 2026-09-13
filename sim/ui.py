@@ -17,6 +17,7 @@ class ControlPanel:
         ]
         self.dragging = None
         self.food_subsidy_button_rect = pygame.Rect(10, self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 10, 200, 30)
+        self.log_snapshot_button_rect = pygame.Rect(220, self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 10, 200, 30)
 
     ROW_HEIGHT = 50
     BAR_Y_OFFSET = 20  # deja lugar arriba para el label
@@ -48,6 +49,8 @@ class ControlPanel:
                         y = random.uniform(0, grid_h)
                     amount = random.randint(80, 150)
                     self.world.food_pellets.append({'x': x, 'y': y, 'amount': amount})
+            if self.log_snapshot_button_rect.collidepoint(event.pos):
+                self.world.export_creature_snapshot()
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             bar_x, bar_y = self._bar_pos(self.sliders.index(self.dragging))
             handle_x = max(0, min(event.pos[0] - bar_x, 200))
@@ -86,6 +89,11 @@ class ControlPanel:
         subsidy_label = "Food subsidy"
         text_surface = font.render(subsidy_label, True, (255, 255, 255))
         screen.blit(text_surface, (self.food_subsidy_button_rect.x + 10, self.food_subsidy_button_rect.y + 5))
+
+        pygame.draw.rect(screen, (128, 0, 128), self.log_snapshot_button_rect)
+        log_label = "Export snapshot"
+        text_surface = font.render(log_label, True, (255, 255, 255))
+        screen.blit(text_surface, (self.log_snapshot_button_rect.x + 10, self.log_snapshot_button_rect.y + 5))
 
         fps_text = f"FPS: {fps:.2f}"
         fps_surface = font.render(fps_text, True, (255, 255, 255))
