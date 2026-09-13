@@ -7,4 +7,4 @@ venv/
 .aider*
 *.log
 sim_log.csv
-lineage.csv
+lineage*.csv
