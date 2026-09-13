@@ -44,7 +44,10 @@ class Renderer:
 
             # Convertir hue a RGB para colores más visibles
             import colorsys
-            hue = (num_blocks * 30) % 360 / 360.0
+            # 137.5 (ángulo áureo) evita que conteos de bloques comunes
+            # colisionen en el mismo color, a diferencia de un paso fijo
+            # como 30 (12 bloques exactos volvía a dar rojo, igual que 0).
+            hue = (num_blocks * 137.5) % 360 / 360.0
             saturation = 1.0
             value = 1.0
             r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
