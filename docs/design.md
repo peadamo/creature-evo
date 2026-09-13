@@ -312,3 +312,17 @@ Tabla de qué bloques están garantizados al nacer, cuáles son puramente al aza
 **Decisión tomada, pendiente de implementar**: agregar `incubadora` a la lista de bloques garantizados al nacer (junto a boca/generador/actuador/sonar), cableada al banco desde el genoma inicial — no dejarlo librado al azar.
 
 **Propuesta en discusión (no implementada, solo conceptual todavía)**: dividir `sonar` en dos bloques separados — `radar_criaturas` (detecta al vecino más cercano) y `radar_comida` (detecta el pellet más cercano) — en vez de un solo bloque que trae ambas señales mezcladas. Permitiría que la evolución elija tener uno sin el otro (ej. un "herbívoro" que no le importa dónde están los demás). Usuario dijo estar abierto a discusión pero no confirmó todavía — no tocar código hasta que se decida.
+
+**Decisión tomada e implementada**: el `banco_neuronal` dejó de estar protegido de la mutación "quitar bloque" (`reproduction.py`). Motivo: se confirmó experimentalmente que el motor de evaluación ya soporta conexiones directas borde→borde (ej. `sonar_dx_comida → actuador_impulso`, sin pasar por el banco — probado, funciona sin retraso ni intermediario) porque la mutación `add_connection` elige 2 bloques al azar sin restricción. Con el banco desprotegido, una criatura puede evolucionar a deshacerse del "cerebro" por completo y sobrevivir a puro reflejo — una estrategia de vida legítima ("boca abierta, va derecho a la comida, cero cómputo intermedio"), no un error. Filosóficamente relevante para el objetivo del proyecto (¿hace falta un cerebro para estar "vivo"?).
+
+## 13. Rediseño del ciclo de vida del huevo (conceptual, no implementado todavía)
+
+Propuesta del usuario, pendiente de implementar (no tocar código hasta confirmar detalles finales de las constantes):
+
+1. **Costo del huevo escala con el tamaño genético de la cría**: `capacidad_huevo = base + K × cantidad_de_bloques_del_hijo` (a definir `base` y `K`). Un huevo que va a eclosionar en un bicho de 20 bloques cuesta más grasa/tiempo que uno de 5.
+2. **El huevo tiene dos fases**: "interno" (adentro de la madre, invisible/protegido del mundo, se desarrolla solo por inversión directa de la madre) y "externo" (ya liberado al mundo, visible, depredable, se desarrolla solo — sin más inversión de nadie — a partir de ahí).
+3. **La madre puede largar el huevo (pasar de interno a externo) en CUALQUIER momento del desarrollo**, sin restricción — nueva neurona de salida en la incubadora para esta decisión. No hay un piso obligatorio para poder largarlo.
+4. **Pero hay un umbral de viabilidad al 50% de `capacidad_huevo`**: si se larga ANTES de esa marca, el huevo queda no-viable y se pierde (no completa su desarrollo solo, la inversión se desperdicia). Si se larga en o después del 50%, el huevo sigue desarrollándose autónomamente hasta completarse.
+5. Trade-off resultante para que la evolución lo resuelva: largar temprano libera a la madre antes (menos tiempo con recursos comprometidos, ella puede volver a buscar comida/moverse libre) pero arriesga perder todo si no llegó a viabilidad; sostenerlo adentro es más seguro (protegido de depredación) pero más lento y le ata recursos a la madre por más tiempo.
+
+Pendiente de definir antes de implementar: velocidad de crecimiento autónomo de un huevo ya externo y viable (¿tasa fija por tick?), y los valores concretos de `base`/`K` para el costo escalado por tamaño.
