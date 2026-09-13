@@ -33,14 +33,15 @@ class ControlPanel:
             ui_height = self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 50
             if event.pos[1] > ui_height:  # Click en área de simulación
                 grid_w, grid_h = self.world.physics.grid_size
+                screen_height = pygame.display.get_surface().get_height()
                 scale_x = self.screen_width / grid_w
-                scale_y = (pygame.display.get_surface().get_height() - ui_height) / grid_h
+                scale_y = (screen_height - ui_height) / grid_h
                 world_x = event.pos[0] / scale_x
                 world_y = (event.pos[1] - ui_height) / scale_y
                 self.mutation_field = {
                     'x': world_x,
                     'y': world_y,
-                    'radius': 15.0,
+                    'radius': 4.0,  # Radio pequeño (4 unidades de grilla)
                     'duration': 100
                 }
                 return  # No procesar más
