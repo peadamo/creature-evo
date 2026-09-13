@@ -33,10 +33,20 @@ class ControlPanel:
                 if handle_rect.collidepoint(event.pos):
                     self.dragging = slider
             if self.food_subsidy_button_rect.collidepoint(event.pos):
-                for _ in range(20):
-                    x = random.uniform(0, self.world.physics.grid_size[0])
-                    y = random.uniform(0, self.world.physics.grid_size[1])
-                    amount = random.randint(5, 30)
+                # Antes tiraba pellets chicos en posiciones 100% al azar del
+                # mapa - el efecto era invisible, se perdía entre la comida
+                # ya existente. Ahora: más cantidad, más grandes, y cerca de
+                # criaturas vivas para que el efecto se note al toque.
+                grid_w, grid_h = self.world.physics.grid_size
+                for _ in range(30):
+                    if self.world.creatures:
+                        base = random.choice(self.world.creatures).position
+                        x = max(0, min(grid_w, base[0] + random.uniform(-10, 10)))
+                        y = max(0, min(grid_h, base[1] + random.uniform(-10, 10)))
+                    else:
+                        x = random.uniform(0, grid_w)
+                        y = random.uniform(0, grid_h)
+                    amount = random.randint(80, 150)
                     self.world.food_pellets.append({'x': x, 'y': y, 'amount': amount})
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             bar_x, bar_y = self._bar_pos(self.sliders.index(self.dragging))
