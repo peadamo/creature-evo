@@ -187,3 +187,12 @@ Comparando gen-0 vs gen-1 en una corrida de 4000 ticks: los hijos (gen-1, n=18) 
 Mientras se investigaba por qué los linajes no se sostienen, apareció un crash nuevo (`KeyError` en `Creature.evaluate()`, buscando una neurona de banco que no existía) — no reproducible con 29 semillas distintas de 3000 ticks, señal de que era genuinamente raro, no un bug determinista fácil de disparar.
 
 Causa real: `Creature.remove_block()` (llamado cuando el combate destruye un bloque) limpiaba las conexiones del diccionario en memoria de esa instancia (`self.connections`), pero **nunca tocaba `self.genome.connections`** (la lista que efectivamente viaja al hijo vía `copy.deepcopy` cuando esa criatura pone un huevo). Si una criatura perdía un bloque en combate y **después** lograba reproducirse, el genoma heredado por su cría conservaba una conexión colgante hacia una neurona ya destruida — y la cría explotaba al construirse. Por eso era tan raro: hacían falta ambos eventos (perder un bloque Y reproducirse después) en la misma criatura, y ambos son individualmente poco frecuentes. Arreglado: `remove_block` ahora limpia ambas listas.
+
+### 10.7 Población base más grande: no da linajes más profundos, pero sí más frecuentes
+
+Con el crash heredable ya arreglado, comparé población mínima 20 vs. 100-150 en corridas de 15000 ticks (mismas condiciones, solo cambia el tamaño de población):
+
+- **Población 20**: alcanzó generación 4 (máximo histórico), pero la población viva mostró algún individuo de generación >0 en solo 2 de 15 muestreos cada 1000 ticks — la mayoría del tiempo es puro gen-0.
+- **Población 100-150**: alcanzó generación 3 (un poco menos en profundidad máxima, dentro de la variación esperada entre corridas), pero mostró generación >0 viva en 5 de 15 muestreos — más del doble de frecuencia.
+
+Conclusión: más población no hace que una línea individual llegue más lejos, pero sí aumenta las chances de que *en cualquier momento dado* haya algún linaje reciente vivo, simplemente porque hay más intentos en paralelo. Tiene sentido estadístico — no es una mejora del mecanismo, es fuerza bruta de muestreo. Pendiente: correr por más tiempo con población grande para ver si eventualmente compone una cadena más profunda que con población chica.
