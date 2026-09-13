@@ -217,68 +217,81 @@ class World:
 
     def tick_incubadoras(self):
         import copy
-        
+
         for creature in self.creatures:
             for block_type, x, y, params in creature.genome.blocks:
                 if block_type == 'incubadora':
                     invertir_value = creature.neurons.get(f'neuron_incubadora_{x}_{y}_invertir', 0)
+                    liberar_value = creature.neurons.get(f'neuron_incubadora_{x}_{y}_liberar', 0)
                     invertir_value = max(0.0, min(1.0, invertir_value))
-                    
-                    available_fat = self.fat_levels.get(id(creature), 0)
-                    if invertir_value > 0 and available_fat > 0:
-                        consumed_fat = min(invertir_value * 5, available_fat)
-                        self.fat_levels[id(creature)] -= consumed_fat
-                        
-                        egg = self.creature_eggs.get(id(creature))
-                        if not egg:
-                            egg = {
-                                'x': creature.position[0],
-                                'y': creature.position[1],
-                                'progress': 0.0,
-                                'parent_genome': copy.deepcopy(creature.genome),
-                                'parent_generation': self.generation.get(id(creature), 0),
-                                'parent_id': id(creature),
-                            }
-                            self.eggs.append(egg)
-                            self.creature_eggs[id(creature)] = egg
-                            # Premio por poner huevo: energía directa (no grasa),
-                            # para que reproducirse no mate al padre por
-                            # quedarse sin combustible para su propio
-                            # metabolismo. Es energía, no grasa, a propósito:
-                            # así no realimenta directamente la lógica de
-                            # "invertir" (que mira fat_levels) y no dispara
-                            # otro huevo de inmediato.
-                            self.energy.produce_energy(id(creature), 15)
-                        # 0.5: medido que con la tasa de disparo real del banco,
-                        # una criatura logra invertir en promedio ~1 vez en toda
-                        # su vida. Pedir múltiples inversiones para completar un
-                        # huevo (como exigía 0.02, y hasta 0.1) significaba que
-                        # básicamente ningún huevo llegaba nunca a progress=1.0.
-                        egg['progress'] += consumed_fat * 0.5
-                        
-                        creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = min(1.0, egg['progress'])
+
+                    egg = self.creature_eggs.get(id(creature))
+                    if not egg and invertir_value > 0:
+                        # Crear huevo: calcular capacidad según tamaño del hijo (estimado como tamaño padre + variación)
+                        num_bloques_estimado = len(creature.genome.blocks)
+                        capacity = 10 + 2 * num_bloques_estimado
+
+                        egg = {
+                            'x': creature.position[0],
+                            'y': creature.position[1],
+                            'progress': 0.0,
+                            'capacity': capacity,
+                            'phase': 'interno',
+                            'parent_genome': copy.deepcopy(creature.genome),
+                            'parent_generation': self.generation.get(id(creature), 0),
+                            'parent_id': id(creature),
+                        }
+                        self.eggs.append(egg)
+                        self.creature_eggs[id(creature)] = egg
+                        self.energy.produce_energy(id(creature), 15)
+
+                    if egg:
+                        available_fat = self.fat_levels.get(id(creature), 0)
+                        if invertir_value > 0 and available_fat > 0:
+                            consumed_fat = min(invertir_value * 5, available_fat)
+                            self.fat_levels[id(creature)] -= consumed_fat
+                            egg['progress'] += consumed_fat * 0.5
+
+                        # Decidir si liberar el huevo
+                        viability_threshold = egg['capacity'] * 0.5
+                        if liberar_value > 0.5 and egg['phase'] == 'interno':
+                            if egg['progress'] >= viability_threshold:
+                                egg['phase'] = 'externo'
+                            else:
+                                # Lanzar antes del 50% = no viable, se pierde
+                                self.eggs.remove(egg)
+                                del self.creature_eggs[id(creature)]
+                                creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = 0.0
+                                continue
+
+                        # Crecimiento autónomo si es externo
+                        if egg['phase'] == 'externo':
+                            egg['progress'] += 0.1
+
+                        creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = min(1.0, egg['progress'] / egg['capacity'])
                     else:
                         creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = 0.0
-        
-        # Predación de huevos
+
+        # Predación de huevos (solo externos)
         for egg in self.eggs[:]:
-            num_nearby_mouths = sum(1 for creature in self.creatures if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and 
-                                  ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0)
-            if num_nearby_mouths > 0:
-                egg['progress'] -= 0.1 * num_nearby_mouths
-                if egg['progress'] <= 0:
-                    self.eggs.remove(egg)
-                    owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
-                    if owner_key is not None:
-                        del self.creature_eggs[owner_key]
-                    for creature in self.creatures:
-                        if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and \
-                           ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0:
-                            self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + 20
-        
-        # Hachazón de huevos
+            if egg['phase'] == 'externo':
+                num_nearby_mouths = sum(1 for creature in self.creatures if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and
+                                      ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0)
+                if num_nearby_mouths > 0:
+                    egg['progress'] -= 0.1 * num_nearby_mouths
+                    if egg['progress'] <= 0:
+                        self.eggs.remove(egg)
+                        owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
+                        if owner_key is not None:
+                            del self.creature_eggs[owner_key]
+                        for creature in self.creatures:
+                            if any(block_type == 'boca' for block_type, _, _, _ in creature.genome.blocks) and \
+                               ((creature.position[0] - egg['x']) ** 2 + (creature.position[1] - egg['y']) ** 2) ** 0.5 <= 2.0:
+                                self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + 20
+
+        # Eclosión de huevos
         for egg in self.eggs[:]:
-            if egg['progress'] >= 1.0:
+            if egg['progress'] >= egg['capacity']:
                 new_genome = self.reproduction.mutate_genome(egg['parent_genome'])
                 self.spawn_creature(new_genome, (egg['x'], egg['y']), generation=egg.get('parent_generation', 0) + 1, parent_id=egg.get('parent_id'))
                 self.eggs.remove(egg)

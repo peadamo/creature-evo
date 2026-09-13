@@ -24,7 +24,7 @@ class Genome:
             elif block_type == 'almacenamiento':
                 return {'reserva': 0.0}
             elif block_type == 'incubadora':
-                return {'desarrollo': 0.0, 'invertir': 0.0}
+                return {'desarrollo': 0.0, 'invertir': 0.0, 'liberar': 0.0}
             elif block_type == 'arma':
                 return {'objetivo': 0.0}
             elif block_type == 'generador':
