@@ -4,9 +4,10 @@ import pygame
 
 
 class ControlPanel:
-    def __init__(self, world, screen_width=800):
+    def __init__(self, world, screen_width=1200, screen_height=900):
         self.world = world
         self.screen_width = screen_width
+        self.screen_height = screen_height
         self.ticks_per_frame = 1
         self.mutation_multiplier = 1.0
         self.export_feedback_ticks = 0  # mostrar feedback de export por N ticks
@@ -33,9 +34,8 @@ class ControlPanel:
             ui_height = self.BAR_Y_OFFSET + len(self.sliders) * self.ROW_HEIGHT + 50
             if event.pos[1] > ui_height:  # Click en área de simulación
                 grid_w, grid_h = self.world.physics.grid_size
-                screen_height = pygame.display.get_surface().get_height()
                 scale_x = self.screen_width / grid_w
-                scale_y = (screen_height - ui_height) / grid_h
+                scale_y = (self.screen_height - ui_height) / grid_h
                 world_x = event.pos[0] / scale_x
                 world_y = (event.pos[1] - ui_height) / scale_y
                 self.mutation_field = {
