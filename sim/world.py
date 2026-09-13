@@ -235,6 +235,14 @@ class World:
                             }
                             self.eggs.append(egg)
                             self.creature_eggs[id(creature)] = egg
+                            # Premio por poner huevo: energía directa (no grasa),
+                            # para que reproducirse no mate al padre por
+                            # quedarse sin combustible para su propio
+                            # metabolismo. Es energía, no grasa, a propósito:
+                            # así no realimenta directamente la lógica de
+                            # "invertir" (que mira fat_levels) y no dispara
+                            # otro huevo de inmediato.
+                            self.energy.produce_energy(id(creature), 15)
                         # 0.5: medido que con la tasa de disparo real del banco,
                         # una criatura logra invertir en promedio ~1 vez en toda
                         # su vida. Pedir múltiples inversiones para completar un
