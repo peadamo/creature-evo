@@ -33,7 +33,11 @@ class Creature:
                     threshold = params['thresholds'][i]
                     self.potentials[neuron_id] = random.uniform(0.0, threshold)
                     self.neuron_thresholds[neuron_id] = threshold
-            else:
+            # Neurona hp_level para todos los bloques (input: lectura del nivel de vida)
+            hp_neuron_id = f"neuron_{block_type}_{x}_{y}_hp_level"
+            self.neurons[hp_neuron_id] = 0.0
+
+            if block_type != 'banco_neuronal':
                 for param in params.keys():
                     if block_type == 'actuador' and param == 'direccion':
                         continue  # geometría fija del bloque, no es una señal
@@ -71,6 +75,14 @@ class Creature:
                 self.potentials[neuron_id] = 0.0
             else:
                 self.neurons[neuron_id] = 0.0
+
+        # Pass C - Update sensory inputs (hp_level para cada bloque)
+        for block_type, x, y in self.block_hp.keys():
+            hp_neuron_id = f"neuron_{block_type}_{x}_{y}_hp_level"
+            max_hp = self.block_hp[(block_type, x, y)]
+            current_hp = self.block_hp.get((block_type, x, y), max_hp)
+            if hp_neuron_id in self.neurons:
+                self.neurons[hp_neuron_id] = min(1.0, current_hp / max_hp) if max_hp > 0 else 0.0
 
     def remove_block(self, block_type, x, y):
         # Eliminar el bloque del genoma
