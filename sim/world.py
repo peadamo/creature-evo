@@ -27,6 +27,7 @@ class World:
         self.lifespan_history = []  # lista de (death_tick, lifespan_en_ticks)
         self.max_lifespan_ever = 0
         self.death_markers = []  # [{'x','y','ticks_left'}] para el indicador visual de muerte
+        self.death_causes_since_log = {}
 
     def spawn_creature(self, genome, position=None):
         creature = Creature(genome)
@@ -43,6 +44,10 @@ class World:
             self.lifespan_history.append((self.tick_count, lifespan))
             self.max_lifespan_ever = max(self.max_lifespan_ever, lifespan)
             self.death_markers.append({'x': dying.position[0], 'y': dying.position[1], 'ticks_left': 15})
+
+            had_brain = any(bt == 'banco_neuronal' for bt, _, _, _ in dying.genome.blocks)
+            cause = 'starvation' if had_brain else 'starvation_brain_dead'
+            self.death_causes_since_log[cause] = self.death_causes_since_log.get(cause, 0) + 1
 
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
@@ -107,6 +112,7 @@ class World:
             'eggs_hatched_per_20ticks', 'artificial_refills_per_20ticks',
             'egg_count', 'food_pellet_count',
             'max_lifespan_ever', 'avg_lifespan_last_500',
+            'deaths_starvation', 'deaths_starvation_brain_dead',
         ]
 
         all_thresholds = []
@@ -131,6 +137,8 @@ class World:
             len(self.food_pellets),
             self.max_lifespan_ever,
             np.mean([l for (_, l) in self.lifespan_history]) if self.lifespan_history else 0,
+            self.death_causes_since_log.get('starvation', 0),
+            self.death_causes_since_log.get('starvation_brain_dead', 0),
         ]
 
         with open(path, 'a', newline='') as file:
@@ -141,6 +149,8 @@ class World:
 
         self.eggs_hatched_since_log = 0
         self.artificial_refills_since_log = 0
+        self.death_causes_since_log = {}
+
     def tick_incubadoras(self):
         import copy
         
