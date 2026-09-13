@@ -9,3 +9,4 @@ venv/
 sim_log.csv
 lineage*.csv
 checkpoint*.json
+*.png
