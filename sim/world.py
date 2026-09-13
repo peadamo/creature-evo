@@ -23,6 +23,10 @@ class World:
         self.fat_levels = {}
         self.eggs_hatched_since_log = 0
         self.artificial_refills_since_log = 0
+        self.birth_tick = {}
+        self.lifespan_history = []  # lista de (death_tick, lifespan_en_ticks)
+        self.max_lifespan_ever = 0
+        self.death_markers = []  # [{'x','y','ticks_left'}] para el indicador visual de muerte
 
     def spawn_creature(self, genome, position=None):
         creature = Creature(genome)
@@ -30,8 +34,16 @@ class World:
         self.physics.add_creature(creature, position)
         self.energy.add_creature(id(creature))
         self.fat_levels[id(creature)] = 0
+        self.birth_tick[id(creature)] = self.tick_count
 
     def kill_creature(self, creature_id):
+        dying = next((c for c in self.creatures if id(c) == creature_id), None)
+        if dying is not None:
+            lifespan = self.tick_count - self.birth_tick.get(creature_id, self.tick_count)
+            self.lifespan_history.append((self.tick_count, lifespan))
+            self.max_lifespan_ever = max(self.max_lifespan_ever, lifespan)
+            self.death_markers.append({'x': dying.position[0], 'y': dying.position[1], 'ticks_left': 15})
+
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
         del self.energy.energy_levels[creature_id]
@@ -42,6 +54,7 @@ class World:
         if creature_id in self.fat_levels:
             del self.fat_levels[creature_id]
         self.physics.velocities.pop(creature_id, None)
+        self.birth_tick.pop(creature_id, None)
 
     def update_sensors(self):
         for creature in self.creatures:
@@ -93,6 +106,7 @@ class World:
             'avg_bank_threshold', 'std_bank_threshold',
             'eggs_hatched_per_20ticks', 'artificial_refills_per_20ticks',
             'egg_count', 'food_pellet_count',
+            'max_lifespan_ever', 'avg_lifespan_last_500',
         ]
 
         all_thresholds = []
@@ -115,6 +129,8 @@ class World:
             self.artificial_refills_since_log,
             len(self.eggs),
             len(self.food_pellets),
+            self.max_lifespan_ever,
+            np.mean([l for (_, l) in self.lifespan_history]) if self.lifespan_history else 0,
         ]
 
         with open(path, 'a', newline='') as file:
@@ -301,6 +317,16 @@ class World:
         for creature in self.creatures[:]:
             if self.energy.check_death(id(creature)):
                 self.kill_creature(id(creature))
+
+        # Decaimiento de los marcadores visuales de muerte
+        for marker in self.death_markers[:]:
+            marker['ticks_left'] -= 1
+            if marker['ticks_left'] <= 0:
+                self.death_markers.remove(marker)
+
+        # Recorte del historial de vidas: solo nos interesa la ventana reciente
+        cutoff = self.tick_count - 500
+        self.lifespan_history = [(t, l) for (t, l) in self.lifespan_history if t >= cutoff]
 
         if self.tick_count % 20 == 0:
             self.log_summary()
