@@ -351,7 +351,7 @@ class World:
         for egg in self.eggs[:]:
             if egg['progress'] >= egg['capacity']:
                 # Respetar límite de población: si ya hay max, el huevo se descarta
-                if len(self.creatures) >= self.max_creatures:
+                if len(self.creatures) >= self.max_population:
                     self.eggs.remove(egg)
                     owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
                     if owner_key is not None:
