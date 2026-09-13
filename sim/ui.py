@@ -65,18 +65,19 @@ class ControlPanel:
 
                 # Si celda seleccionada, editar con herramienta
                 if self.world.selected_cell:
+                    shift_held = pygame.key.get_mods() & pygame.KMOD_SHIFT
                     if self.active_tool == 'mutation':
-                        if event.mod & pygame.KMOD_SHIFT:
+                        if shift_held:
                             props['mutation_factor'] = max(0.1, props['mutation_factor'] - 0.1)
                         else:
                             props['mutation_factor'] = min(3.0, props['mutation_factor'] + 0.1)
                     elif self.active_tool == 'energy':
-                        if event.mod & pygame.KMOD_SHIFT:
+                        if shift_held:
                             props['energy_cost'] = max(0.5, props['energy_cost'] - 0.1)
                         else:
                             props['energy_cost'] = min(3.0, props['energy_cost'] + 0.1)
                     elif self.active_tool == 'food':
-                        if event.mod & pygame.KMOD_SHIFT:
+                        if shift_held:
                             props['food_generation'] = max(0.0, props['food_generation'] - 0.1)
                         else:
                             props['food_generation'] = min(3.0, props['food_generation'] + 0.1)
