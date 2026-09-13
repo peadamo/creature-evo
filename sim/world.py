@@ -99,6 +99,22 @@ class World:
         self.birth_tick.pop(creature_id, None)
         self.generation.pop(creature_id, None)
 
+    def genetic_similarity(self, genome1, genome2):
+        # Calcula similitud entre 0 (muy diferente) y 1 (idéntico)
+        # usando Hamming distance sobre la secuencia de bloques
+        if not genome1.blocks or not genome2.blocks:
+            return 0.0
+
+        # Crear signatures de bloques como tuplas (tipo, params)
+        sig1 = sorted([(b[0], tuple(sorted(b[3].items()))) for b in genome1.blocks])
+        sig2 = sorted([(b[0], tuple(sorted(b[3].items()))) for b in genome2.blocks])
+
+        # Contar matches
+        matches = sum(1 for s1 in sig1 if any(s1 == s2 for s2 in sig2))
+        max_len = max(len(sig1), len(sig2))
+
+        return matches / max_len if max_len > 0 else 0.0
+
     def update_sensors(self):
         for creature in self.creatures:
             nearest_creature, _ = self.creature_grid.nearest(
@@ -123,6 +139,23 @@ class World:
             else:
                 dx_comida, dy_comida = 0.0, 0.0
 
+            # Detectar huevo más cercano (para radar_parentesco)
+            nearest_egg = None
+            nearest_egg_distance = float('inf')
+            for egg in self.eggs:
+                dist = ((egg['x'] - creature.position[0]) ** 2 + (egg['y'] - creature.position[1]) ** 2) ** 0.5
+                if dist < nearest_egg_distance and egg.get('phase') == 'externo':  # solo huevos externos
+                    nearest_egg_distance = dist
+                    nearest_egg = egg
+
+            if nearest_egg and nearest_egg_distance < 50.0:  # radio ~50
+                dx_huevo = (nearest_egg['x'] - creature.position[0]) / self.physics.grid_size[0]
+                dy_huevo = (nearest_egg['y'] - creature.position[1]) / self.physics.grid_size[1]
+                parent_genome = nearest_egg.get('parent_genome')
+                parentesco = self.genetic_similarity(creature.genome, parent_genome) if parent_genome else 0.0
+            else:
+                dx_huevo, dy_huevo, parentesco = 0.0, 0.0, 0.0
+
             for block in creature.genome.blocks:
                 if block[0] == 'sonar':
                     x, y = block[1], block[2]
@@ -138,6 +171,11 @@ class World:
                     creature.neurons[f"neuron_sonar_{x}_{y}_dy"] = dy
                     creature.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = dx_comida
                     creature.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = dy_comida
+                elif block[0] == 'radar_parentesco':
+                    x, y = block[1], block[2]
+                    creature.neurons[f"neuron_radar_parentesco_{x}_{y}_dx"] = dx_huevo
+                    creature.neurons[f"neuron_radar_parentesco_{x}_{y}_dy"] = dy_huevo
+                    creature.neurons[f"neuron_radar_parentesco_{x}_{y}_parentesco"] = parentesco
 
     def incubadora_wired(self, creature):
         for bt, x, y, _ in creature.genome.blocks:

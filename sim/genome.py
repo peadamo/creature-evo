@@ -17,6 +17,8 @@ class Genome:
         def make_params(block_type):
             if block_type == 'sonar':
                 return {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
+            elif block_type == 'radar_parentesco':
+                return {'dx': 0.0, 'dy': 0.0, 'parentesco': 0.0, 'activo': 0.0}
             elif block_type == 'actuador':
                 return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
             elif block_type in ('boca', 'casco'):
@@ -42,7 +44,7 @@ class Genome:
             io_blocks.append((guaranteed_type, x, y))
 
         for _ in range(random.randint(1, 3)):
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco'])
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco', 'radar_parentesco'])
             x, y = random.randint(0, 10), random.randint(0, 10)
             genome.add_block(block_type, x, y, make_params(block_type))
             io_blocks.append((block_type, x, y))
@@ -74,6 +76,11 @@ class Genome:
                 # Pesos hacia invertir/liberar deben ser positivos: son outputs que representan porcentajes (0-1)
                 genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_invertir", random.uniform(0.0, 1.0))
                 genome.add_connection(bank_neuron(), f"neuron_incubadora_{x}_{y}_liberar", random.uniform(0.0, 1.0))
+            elif block_type == 'radar_parentesco':
+                # Sensor de parentesco: inputs del mundo (dx, dy, parentesco)
+                # Output activo conectado al banco para activar/desactivar el scanning
+                for _ in range(2):
+                    genome.add_connection(bank_neuron(), f"neuron_radar_parentesco_{x}_{y}_activo", random.uniform(-1.0, 1.0))
             elif block_type == 'arma':
                 genome.add_connection(bank_neuron(), f'neuron_arma_{x}_{y}_objetivo', random.uniform(-1.0, 1.0))
 
