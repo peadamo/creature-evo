@@ -36,7 +36,7 @@ class Genome:
         # Sustento garantizado: sin esto la mayoría de las criaturas nace sin
         # forma de conseguir energía ni de percibir dónde está la comida, y
         # muere de inanición antes de que la evolución tenga chance de actuar.
-        for guaranteed_type in ('boca', 'generador', 'actuador', 'sonar'):
+        for guaranteed_type in ('boca', 'generador', 'actuador', 'sonar', 'incubadora'):
             x, y = random.randint(0, 10), random.randint(0, 10)
             genome.add_block(guaranteed_type, x, y, make_params(guaranteed_type))
             io_blocks.append((guaranteed_type, x, y))
