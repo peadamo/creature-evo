@@ -75,7 +75,11 @@ class Creature:
             self.neuron_thresholds.pop(neuron_id, None)
         
         # Eliminar conexiones asociadas al bloque
-        self.connections = [conn for conn in self.connections if not (conn[0].startswith(prefix) or conn[1].startswith(prefix))]
+        self.connections = {
+            (origin, dest): weight
+            for (origin, dest), weight in self.connections.items()
+            if not (origin.startswith(prefix) or dest.startswith(prefix))
+        }
 
     def get_actuator_outputs(self):
         actuator_outputs = [value for key, value in self.neurons.items() if 'neuron_actuador' in key]

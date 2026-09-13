@@ -61,15 +61,29 @@ class World:
             else:
                 dx, dy = 0.0, 0.0
 
+            nearest_food_distance = float('inf')
+            nearest_food = None
+            for pellet in self.food_pellets:
+                distance = np.linalg.norm(np.array([pellet['x'], pellet['y']]) - np.array(creature.position))
+                if distance < nearest_food_distance:
+                    nearest_food_distance = distance
+                    nearest_food = pellet
+
+            if nearest_food:
+                dx_comida = (nearest_food['x'] - creature.position[0]) / self.physics.grid_size[0]
+                dy_comida = (nearest_food['y'] - creature.position[1]) / self.physics.grid_size[1]
+            else:
+                dx_comida, dy_comida = 0.0, 0.0
+
             for block in creature.genome.blocks:
                 if block[0] == 'sonar':
                     x, y = block[1], block[2]
-                    io_id_dx = f"neuron_sonar_{x}_{y}_dx"
-                    io_id_dy = f"neuron_sonar_{x}_{y}_dy"
                     io_id_activo = f"neuron_sonar_{x}_{y}_activo"
                     if creature.neurons.get(io_id_activo, 0) > 0:
-                        creature.neurons[io_id_dx] = dx
-                        creature.neurons[io_id_dy] = dy
+                        creature.neurons[f"neuron_sonar_{x}_{y}_dx"] = dx
+                        creature.neurons[f"neuron_sonar_{x}_{y}_dy"] = dy
+                        creature.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = dx_comida
+                        creature.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = dy_comida
 
     def log_summary(self, path='sim_log.csv'):
         import os

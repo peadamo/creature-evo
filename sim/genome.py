@@ -13,24 +13,35 @@ class Genome:
         thresholds = [random.uniform(0.3, 1.5) for _ in range(num_bank_neurons)]
         genome.add_block('banco_neuronal', bank_x, bank_y, {'num_neurons': num_bank_neurons, 'thresholds': thresholds})
 
-        io_blocks = []
-        for _ in range(random.randint(1, 3)):
-            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora'])
-            x, y = random.randint(0, 10), random.randint(0, 10)
-            params = {}
+        def make_params(block_type):
             if block_type == 'sonar':
-                params = {'dx': 0.0, 'dy': 0.0, 'activo': 0.0}
+                return {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
             elif block_type == 'actuador':
-                params = {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
-            elif block_type in ['boca', 'almacenamiento']:
-                params = {}
+                return {'direccion': random.uniform(0, 6.283), 'impulso': 0.0}
+            elif block_type in ('boca', 'almacenamiento'):
+                return {}
             elif block_type == 'incubadora':
-                params = {'desarrollo': 0.0, 'invertir': 0.0}
+                return {'desarrollo': 0.0, 'invertir': 0.0}
             elif block_type == 'arma':
-                params = {'objetivo': 0.0}
+                return {'objetivo': 0.0}
             elif block_type == 'generador':
-                params = {'output': 0.0}
-            genome.add_block(block_type, x, y, params)
+                return {'output': 0.0}
+            return {}
+
+        io_blocks = []
+
+        # Sustento garantizado: sin esto la mayoría de las criaturas nace sin
+        # forma de conseguir energía ni de percibir dónde está la comida, y
+        # muere de inanición antes de que la evolución tenga chance de actuar.
+        for guaranteed_type in ('boca', 'generador', 'actuador', 'sonar'):
+            x, y = random.randint(0, 10), random.randint(0, 10)
+            genome.add_block(guaranteed_type, x, y, make_params(guaranteed_type))
+            io_blocks.append((guaranteed_type, x, y))
+
+        for _ in range(random.randint(1, 3)):
+            block_type = random.choice(['sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma'])
+            x, y = random.randint(0, 10), random.randint(0, 10)
+            genome.add_block(block_type, x, y, make_params(block_type))
             io_blocks.append((block_type, x, y))
 
         # Conectar cada bloque sensor/actuador/generador con una neurona aleatoria del banco,
@@ -47,6 +58,8 @@ class Genome:
             elif block_type == 'sonar':
                 genome.add_connection(f"neuron_sonar_{x}_{y}_dx", bank_neuron(), random.uniform(-1.0, 1.0))
                 genome.add_connection(f"neuron_sonar_{x}_{y}_dy", bank_neuron(), random.uniform(-1.0, 1.0))
+                genome.add_connection(f"neuron_sonar_{x}_{y}_dx_comida", bank_neuron(), random.uniform(-1.0, 1.0))
+                genome.add_connection(f"neuron_sonar_{x}_{y}_dy_comida", bank_neuron(), random.uniform(-1.0, 1.0))
                 genome.add_connection(bank_neuron(), f"neuron_sonar_{x}_{y}_activo", random.uniform(-1.0, 1.0))
             elif block_type == 'actuador':
                 genome.add_connection(bank_neuron(), f"neuron_actuador_{x}_{y}_impulso", random.uniform(-1.0, 1.0))
