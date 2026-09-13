@@ -160,16 +160,7 @@ class World:
                     all_thresholds.extend(params.get('thresholds', []))
 
         has_incubadora = [any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks) for c in self.creatures]
-
-        def incubadora_wired(c):
-            for bt, x, y, _ in c.genome.blocks:
-                if bt == 'incubadora':
-                    dest = f"neuron_incubadora_{x}_{y}_invertir"
-                    if any(d == dest for (_, d) in c.connections.keys()):
-                        return True
-            return False
-
-        incubadora_wired_flags = [incubadora_wired(c) for c in self.creatures if any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks)]
+        incubadora_wired_flags = [self.incubadora_wired(c) for c in self.creatures if any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks)]
 
         sonar_activo_values = []
         for c in self.creatures:
