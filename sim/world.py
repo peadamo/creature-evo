@@ -303,9 +303,9 @@ class World:
                                 creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = 0.0
                                 continue
 
-                        # Crecimiento autónomo si es externo
+                        # Crecimiento autónomo si es externo (0.2/tick = 150 ticks promedio para eclosionar)
                         if egg['phase'] == 'externo':
-                            egg['progress'] += 0.1
+                            egg['progress'] += 0.2
 
                         creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = min(1.0, egg['progress'] / egg['capacity'])
                     else:
