@@ -290,6 +290,9 @@ class World:
                             consumed_fat = min(invertir_value * 5, available_fat)
                             self.fat_levels[id(creature)] -= consumed_fat
                             egg['progress'] += consumed_fat * 0.5
+                        elif egg['phase'] == 'interno':
+                            # Crecimiento LENTO si no hay grasa (evita congelación)
+                            egg['progress'] += 0.1
 
                         # Decidir si liberar el huevo
                         viability_threshold = egg['capacity'] * 0.5
