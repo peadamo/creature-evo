@@ -196,3 +196,37 @@ Con el crash heredable ya arreglado, comparé población mínima 20 vs. 100-150 
 - **Población 100-150**: alcanzó generación 3 (un poco menos en profundidad máxima, dentro de la variación esperada entre corridas), pero mostró generación >0 viva en 5 de 15 muestreos — más del doble de frecuencia.
 
 Conclusión: más población no hace que una línea individual llegue más lejos, pero sí aumenta las chances de que *en cualquier momento dado* haya algún linaje reciente vivo, simplemente porque hay más intentos en paralelo. Tiene sentido estadístico — no es una mejora del mecanismo, es fuerza bruta de muestreo. Pendiente: correr por más tiempo con población grande para ver si eventualmente compone una cadena más profunda que con población chica.
+
+### 10.8 Sistema de registro de linaje/árbol genealógico (implementado)
+
+`World.lineage_log` guarda cada nacimiento por huevo como `{child_id, parent_id, generation, birth_tick}`. `World.export_lineage_csv(path)` lo vuelca a CSV para análisis offline (no se llama automáticamente, es manual). Corrida de prueba de 10000 ticks: 58 nacimientos registrados, generación máxima 3.
+
+## 11. Backlog de hipótesis y experimentos a futuro (multi-disciplinar)
+
+Pedido explícito del usuario: seguir generando ángulos de análisis desde biología, química, psicología y sociología, con hipótesis concretas testeables — no solo features, sino preguntas a las que el experimento podría responder.
+
+### 11.1 Hipótesis biológicas/evolutivas
+- **¿Hay especiación?** Si dejamos correr mucho tiempo con población grande, ¿emergen dos o más "linajes de color" (proxy de parentesco) que dejan de cruzarse/convivir en la misma zona del mapa? Medible con el color heredado + clustering espacial.
+- **¿El costo metabólico por bloque genera un "tamaño corporal óptimo"?** Graficar `avg_blocks_per_creature` en función del tiempo — ¿converge a un valor estable, o sigue creciendo/decreciendo sin límite?
+- **Selección r vs. K**: ¿emergen dos estrategias — reproducirse rápido con poca inversión (r) vs. invertir mucho en pocos huevos robustos (K)? Se podría medir agrupando por `invertir_value` promedio de cada linaje exitoso.
+
+### 11.2 Hipótesis "químicas" (economía de energía como proxy)
+- **¿Hay especies "solares" vs. "depredadoras"?** Comparar linajes que sobreviven mayormente vía `generador`+`boca` (herbívoros/autótrofos) vs. los que sobreviven mayormente por `arma` (depredadores) — ¿cuál tiene mejor tasa de reproducción a largo plazo?
+- **Punto de equilibrio de la reserva de grasa (`almacenamiento`)**: ¿las criaturas con este bloque tienen ventaja real, o es puro costo sin beneficio medible dado que hoy no hay mecánica de "hambruna estacional" que lo premie?
+
+### 11.3 Hipótesis "psicológicas" (dinámica interna de la red neuronal)
+- **¿Hay "personalidades" estables?** Tomar el patrón de disparo del banco neuronal de un individuo a lo largo de su vida — ¿es consistente (mismo ritmo/umbral efectivo) o cambia según el contexto (cerca de comida vs. cerca de un depredador)?
+- **Umbral evolutivo como proxy de "temperamento"**: linajes con umbrales bajos (disparan fácil, reactivos) vs. umbrales altos (disparan poco, "cautelosos") — ¿alguno de los dos predice mejor supervivencia?
+
+### 11.4 Hipótesis sociológicas
+- Ya en curso: sesgo de parentesco en combate (sección 10.3, señal débil, muestra chica — repetir con más datos).
+- **¿Hay agrupamiento espacial por color/parentesco?** (clustering real, no solo en combate) — tomar snapshots de posición+color y medir si individuos de colores similares están sistemáticamente más cerca entre sí que el azar.
+- **¿La violencia se correlaciona con densidad poblacional?** Tasa de eventos de combate por individuo en función de cuán cerca del máximo de población está el sistema en ese momento.
+
+### 11.5 Funcionalidades pedidas para soportar estos análisis
+1. **Guardar/cargar poblaciones exitosas entre corridas** (checkpointing): serializar genomas de una corrida (ej. al final, o los "mejores" por longevidad/generación alcanzada) a disco, y poder arrancar una corrida nueva sembrando con esos genomas en vez de puro azar. Permitiría experimentos de "continuidad evolutiva" entre sesiones.
+2. **Más gráficos**: hoy todo el análisis es manual vía scripts Python ad-hoc sobre `sim_log.csv`/`lineage.csv`. Vale la pena un script de reporte que genere gráficos (matplotlib) de las métricas clave a partir de esos CSVs, en vez de reinventar el análisis cada vez.
+3. **Entorno más rico**: ciclo día/noche (afecta producción del `generador`, tipo "solar" real — de noche no genera), temperatura (zonas del mapa con distinto costo metabólico, empuja migración), variación estacional de la cantidad de comida.
+4. **Mayor capacidad de interacción**: hoy el panel de control permite ajustar población/velocidad/mutación/comida; se podría sumar poder click-clickear una criatura específica en el visual para ver su genoma/neuronas en un panel de inspección, en vez de solo agregados poblacionales.
+
+Nada de esto implementado todavía — es la cola de ideas para las próximas sesiones, priorizada según lo que el usuario indique.
