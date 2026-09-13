@@ -59,6 +59,23 @@ class Renderer:
             pygame.draw.line(self.screen, (255, 0, 0), (mx - size, my - size), (mx + size, my + size), 2)
             pygame.draw.line(self.screen, (255, 0, 0), (mx - size, my + size), (mx + size, my - size), 2)
 
+        # Línea de ataque: destello entre atacante y víctima, dura pocos ticks.
+        for marker in getattr(world, 'attack_markers', []):
+            x1 = int(marker['x1'] * scale_x)
+            y1 = int(marker['y1'] * scale_y)
+            x2 = int(marker['x2'] * scale_x)
+            y2 = int(marker['y2'] * scale_y)
+            pygame.draw.line(self.screen, (255, 140, 0), (x1, y1), (x2, y2), 2)
+
+        # Explosión/resto al perder un bloque en combate (no la muerte final).
+        for marker in getattr(world, 'block_destroy_markers', []):
+            mx = int(marker['x'] * scale_x)
+            my = int(marker['y'] * scale_y)
+            progress = marker['ticks_left'] / 12.0
+            radius = int(4 + (1 - progress) * 14)
+            alpha_color = (200, 80, 0)
+            pygame.draw.circle(self.screen, alpha_color, (mx, my), radius, 2)
+
         for creature in world.creatures:
             x, y = creature.position
             screen_x = int(x * scale_x)
@@ -73,6 +90,16 @@ class Renderer:
             label = self.block_count_font.render(str(num_blocks), True, text_color)
             label_rect = label.get_rect(center=(screen_x, screen_y))
             self.screen.blit(label, label_rect)
+
+            # Barrita de energía arriba de la nave: verde=llena, roja=vacía.
+            energy = world.energy.energy_levels.get(id(creature), 0)
+            frac = max(0.0, min(1.0, energy / 100.0))
+            bar_w, bar_h = 24, 3
+            bar_x = screen_x - bar_w // 2
+            bar_y = screen_y - radius - 8
+            pygame.draw.rect(self.screen, (60, 60, 60), (bar_x, bar_y, bar_w, bar_h))
+            bar_color = (int(255 * (1 - frac)), int(255 * frac), 0)
+            pygame.draw.rect(self.screen, bar_color, (bar_x, bar_y, int(bar_w * frac), bar_h))
 
         if ui_panel:
             ui_panel.draw(self.screen, self.font, fps)

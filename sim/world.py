@@ -32,6 +32,8 @@ class World:
         self.lifespan_history = []  # lista de (death_tick, lifespan_en_ticks)
         self.max_lifespan_ever = 0
         self.death_markers = []  # [{'x','y','ticks_left'}] para el indicador visual de muerte
+        self.attack_markers = []  # [{'x1','y1','x2','y2','ticks_left'}] línea de ataque
+        self.block_destroy_markers = []  # [{'x','y','ticks_left'}] explosión al perder un bloque
         self.death_causes_since_log = {}
         self.generation = {}
         self.max_generation_ever = 0
@@ -298,12 +300,22 @@ class World:
                         if matching_blocks:
                             block_to_attack = random.choice(matching_blocks)
                             bt, bx, by, _ = block_to_attack
-                            
+
+                            self.attack_markers.append({
+                                'x1': attacker.position[0], 'y1': attacker.position[1],
+                                'x2': nearest_victim.position[0], 'y2': nearest_victim.position[1],
+                                'ticks_left': 5,
+                            })
+
                             nearest_victim.block_hp[(bt, bx, by)] = nearest_victim.block_hp.get((bt, bx, by), 30) - 10
-                            
+
                             if nearest_victim.block_hp[(bt, bx, by)] <= 0:
                                 nearest_victim.remove_block(bt, bx, by)
                                 self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 15})
+                                self.block_destroy_markers.append({
+                                    'x': nearest_victim.position[0], 'y': nearest_victim.position[1],
+                                    'ticks_left': 12,
+                                })
                                 # Sin bloques no hay cuerpo: quedaría como un
                                 # "fantasma" sin costo de mantenimiento que
                                 # nunca muere de inanición. Si el combate se
@@ -423,11 +435,19 @@ class World:
             if self.energy.check_death(id(creature)):
                 self.kill_creature(id(creature))
 
-        # Decaimiento de los marcadores visuales de muerte
+        # Decaimiento de los marcadores visuales (muerte, ataque, bloque destruido)
         for marker in self.death_markers[:]:
             marker['ticks_left'] -= 1
             if marker['ticks_left'] <= 0:
                 self.death_markers.remove(marker)
+        for marker in self.attack_markers[:]:
+            marker['ticks_left'] -= 1
+            if marker['ticks_left'] <= 0:
+                self.attack_markers.remove(marker)
+        for marker in self.block_destroy_markers[:]:
+            marker['ticks_left'] -= 1
+            if marker['ticks_left'] <= 0:
+                self.block_destroy_markers.remove(marker)
 
         # Recorte del historial de vidas: solo nos interesa la ventana reciente
         cutoff = self.tick_count - 500
