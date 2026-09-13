@@ -42,11 +42,19 @@ A implementar en iteraciones futuras. Estas neuronas darían a la red neuronal m
 - [x] Implementar `dormir` en todos los bloques (completado - hibernacion 50% energía)
 - [ ] Testear largas simulaciones para ver si evolución descubre nuevos comportamientos
 
+## CRÍTICO CORREGIDO (post-sesión)
+
+- **Generador**: Consumía 3 grasa, producía 2 energía = DEFICIT NETO (-1)
+  - Imposible acumular para reproducción (15 energía/huevo)
+  - Reproducción colapsaba post-500 ticks
+  - **FIX**: Cambiar a 10 energía (coeficiente 2/3 → 10/3) = +7 neto
+  - **Resultado**: Población sostenible (~20 criaturas sin hambruna)
+
 ## Próximos pasos
 
-- Simular 10k+ ticks para observar evolución de comportamientos complejos
-- Agregar estadísticas para rastrear uso de suicidio/dormir en poblaciones
-- Implementar `huevo_propio_cercano` si es necesario para cuidado parental
+- Simular 10k+ ticks con balance energético arreglado
+- Rastrear evolución de comportamientos (suicidio/dormir usage)
+- Investigar por qué reproducción aún baja post-500 (aging? evolution drift?)
 
 ## Notas recientes
 
