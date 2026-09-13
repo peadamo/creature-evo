@@ -180,7 +180,7 @@ class World:
                 self.eggs_hatched_since_log += 1
 
     def apply_combat(self):
-        target_types = ['banco_neuronal', 'sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma']
+        target_types = ['banco_neuronal', 'sonar', 'actuador', 'generador', 'boca', 'almacenamiento', 'incubadora', 'arma', 'casco']
         
         for attacker in self.creatures:
             for block_type, ax, ay, _ in attacker.genome.blocks:
