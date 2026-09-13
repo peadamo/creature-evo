@@ -21,9 +21,6 @@ class World:
         self.reproduction = Reproduction()
         self.tick_count = 0
         self.day_length = 500
-
-    def is_daytime(self):
-        return (self.tick_count % self.day_length) < (self.day_length / 2)
         self.lineage_log = []
         self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(60)]
         self.eggs = []
@@ -41,6 +38,9 @@ class World:
         self.food_absorbed_since_log = 0.0
         self.food_distance_sum_since_log = 0.0
         self.food_distance_samples_since_log = 0
+
+    def is_daytime(self):
+        return (self.tick_count % self.day_length) < (self.day_length / 2)
 
     def spawn_creature(self, genome, position=None, generation=0, parent_id=None):
         creature = Creature(genome)
