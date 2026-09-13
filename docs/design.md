@@ -126,9 +126,12 @@ Completado: motores independientes por dirección + física de impulso/inercia r
 
 Completado: arma con daño de contacto lógico (radio 3.0), selección discretizada de tipo de bloque objetivo, HP por bloque (banco neuronal frágil = 10hp, resto = 30hp), destrucción de bloque al llegar a 0 (limpia neuronas/conexiones/HP asociados) y deja pellet de comida (15) en su lugar. Probado estable 2000 ticks sin crash.
 
+Completado: métricas de evolución en `sim_log.csv` (umbral promedio/desvío del banco, huevos eclosionados por ventana, rellenos artificiales por ventana, cantidad de huevos/comida activos).
+
+**⚠️ Problema de balance detectado (no es bug, necesita decisión de diseño)**: la población colapsa a 0 y se rellena entera cada ~40 ticks — es inanición, no combate. Cada criatura nace con 1-3 bloques elegidos al azar entre 8 tipos posibles (sonar/actuador/generador/boca/almacenamiento/incubadora/arma/+banco); la mayoría no saca ni `boca` ni `generador` y no tiene forma de conseguir energía. Opciones a decidir: aumentar el rango de bloques iniciales (ej. 3-6 en vez de 1-3), garantizar al menos un bloque de "sustento" (boca o generador) en el genoma inicial, o bajar el costo de mantenimiento. Pendiente de que el usuario elija el criterio antes de tocarlo.
+
 En curso ahora: panel de control visual (punto 1).
 
 1. **Panel de control visual** (pedido explícito): sliders de población mín/máx en vivo, velocidad de simulación, contador de FPS, slider de tasa de mutación, botón/slider de "subsidio" de comida extra.
-2. **Métricas de evolución real** en `sim_log.csv` (hoy solo agregados básicos): distribución de umbrales del banco (¿se aleja de uniforme random?), tasa de huevos puestos por tick a lo largo del tiempo, población sostenida por encima del mínimo sin relleno artificial.
-3. **Casco/escudo**: bloque pasivo, sin neuronas, solo aporta HP extra a la nave.
+2. **Casco/escudo**: bloque pasivo, sin neuronas, solo aporta HP extra a la nave.
 4. Repasar bien todo el prototipo antes de considerar la migración a GPU (sección 5) — no tiene sentido optimizar para escala hasta que la lógica evolutiva completa esté validada en chico.
