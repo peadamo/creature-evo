@@ -59,7 +59,13 @@ class Creature:
 
         # Pass B - Fire and Leak
         for neuron_id, threshold in self.neuron_thresholds.items():
-            self.potentials[neuron_id] *= 0.8
+            # Fuga baja (retiene 95%): con 0.8 el potencial estacionario ante
+            # un estímulo típico (distancias normalizadas ~0.05) queda en
+            # ~0.125, por debajo de casi todo el rango de umbrales - las
+            # neuronas del banco casi nunca disparaban en ningún lado del
+            # sistema. Con 0.95 el estacionario sube a ~0.46, dentro del
+            # rango bajo de umbrales.
+            self.potentials[neuron_id] *= 0.95
             if self.potentials[neuron_id] > threshold:
                 self.neurons[neuron_id] = 1.0
                 self.potentials[neuron_id] = 0.0

@@ -11,7 +11,7 @@ class Genome:
         genome = cls()
         bank_x, bank_y = 0, 0
         num_bank_neurons = 5
-        thresholds = [random.uniform(0.3, 1.5) for _ in range(num_bank_neurons)]
+        thresholds = [random.uniform(0.1, 0.6) for _ in range(num_bank_neurons)]
         genome.add_block('banco_neuronal', bank_x, bank_y, {'num_neurons': num_bank_neurons, 'thresholds': thresholds})
 
         def make_params(block_type):

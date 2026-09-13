@@ -65,9 +65,11 @@ class World:
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
         del self.energy.energy_levels[creature_id]
         self.fat_levels.pop(creature_id, None)
-        egg = self.creature_eggs.pop(creature_id, None)
-        if egg in self.eggs:
-            self.eggs.remove(egg)
+        # El huevo ya en curso sobrevive al padre: el recurso ya fue
+        # invertido y perderlo cada vez que el padre muere (algo frecuente,
+        # dada la esperanza de vida corta) hacía que casi ningún huevo
+        # llegara a completarse jamás.
+        self.creature_eggs.pop(creature_id, None)
         if creature_id in self.fat_levels:
             del self.fat_levels[creature_id]
         self.physics.velocities.pop(creature_id, None)
@@ -217,17 +219,21 @@ class World:
                         
                         egg = self.creature_eggs.get(id(creature))
                         if not egg:
-                            new_egg = {
+                            egg = {
                                 'x': creature.position[0],
                                 'y': creature.position[1],
                                 'progress': 0.0,
                                 'parent_genome': copy.deepcopy(creature.genome),
                                 'parent_generation': self.generation.get(id(creature), 0),
                             }
-                            self.eggs.append(new_egg)
-                            self.creature_eggs[id(creature)] = new_egg
-                        else:
-                            egg['progress'] += consumed_fat * 0.02
+                            self.eggs.append(egg)
+                            self.creature_eggs[id(creature)] = egg
+                        # 0.5: medido que con la tasa de disparo real del banco,
+                        # una criatura logra invertir en promedio ~1 vez en toda
+                        # su vida. Pedir múltiples inversiones para completar un
+                        # huevo (como exigía 0.02, y hasta 0.1) significaba que
+                        # básicamente ningún huevo llegaba nunca a progress=1.0.
+                        egg['progress'] += consumed_fat * 0.5
                         
                         creature.neurons[f'neuron_incubadora_{x}_{y}_desarrollo'] = min(1.0, egg['progress'])
                     else:
