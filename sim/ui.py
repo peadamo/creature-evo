@@ -1,6 +1,12 @@
+import random
+
+import pygame
+
+
 class ControlPanel:
-    def __init__(self, world):
+    def __init__(self, world, screen_width=800):
         self.world = world
+        self.screen_width = screen_width
         self.ticks_per_frame = 1
         self.mutation_multiplier = 1.0
         self.sliders = [
@@ -22,7 +28,6 @@ class ControlPanel:
                 if handle_rect.collidepoint(event.pos):
                     self.dragging = slider
             if self.food_subsidy_button_rect.collidepoint(event.pos):
-                import random
                 for _ in range(20):
                     x = random.uniform(0, self.world.physics.grid_size[0])
                     y = random.uniform(0, self.world.physics.grid_size[1])
@@ -32,10 +37,8 @@ class ControlPanel:
             bar_x, bar_y = 10, 10 + (self.sliders.index(self.dragging) * 30)
             handle_x = max(0, min(event.pos[0] - bar_x, 200))
             new_value = self.dragging['min'] + (handle_x / 200) * (self.dragging['max'] - self.dragging['min'])
-            if isinstance(self.dragging['obj'], World):
-                setattr(self.dragging['obj'], self.dragging['attr'], int(new_value))
-            else:
-                setattr(self.dragging['obj'], self.dragging['attr'], new_value)
+            is_population_slider = self.dragging['attr'] in ('min_population', 'max_population')
+            setattr(self.dragging['obj'], self.dragging['attr'], int(new_value) if is_population_slider else new_value)
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = None
 
@@ -47,7 +50,9 @@ class ControlPanel:
             handle_rect = pygame.Rect(handle_x - 5, bar_y - 5, 10, 30)
             pygame.draw.rect(screen, (255, 255, 255), bar_rect, 2)
             pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, handle_x, 20))
-            label = f"{slider['label']}: {int(slider['obj'].__dict__[slider['attr']]) if isinstance(slider['obj'], World) else slider['obj'].__dict__[slider['attr']]}"
+            raw_value = slider['obj'].__dict__[slider['attr']]
+            is_population_slider = slider['attr'] in ('min_population', 'max_population')
+            label = f"{slider['label']}: {int(raw_value) if is_population_slider else round(raw_value, 2)}"
             text_surface = font.render(label, True, (255, 255, 255))
             screen.blit(text_surface, (bar_x, bar_y - 20))
 
@@ -58,4 +63,4 @@ class ControlPanel:
 
         fps_text = f"FPS: {fps:.2f}"
         fps_surface = font.render(fps_text, True, (255, 255, 255))
-        screen.blit(fps_surface, (self.width - 100, 10))
+        screen.blit(fps_surface, (self.screen_width - 100, 10))
