@@ -127,6 +127,14 @@ class World:
                     creature.neurons[f"neuron_sonar_{x}_{y}_dx_comida"] = dx_comida
                     creature.neurons[f"neuron_sonar_{x}_{y}_dy_comida"] = dy_comida
 
+    def incubadora_wired(self, creature):
+        for bt, x, y, _ in creature.genome.blocks:
+            if bt == 'incubadora':
+                dest = f"neuron_incubadora_{x}_{y}_invertir"
+                if any(d == dest for (_, d) in creature.connections.keys()):
+                    return True
+        return False
+
     def log_summary(self, path='sim_log.csv'):
         import os
         headers = [
@@ -437,6 +445,28 @@ class World:
             writer.writerow(headers)
             for entry in self.lineage_log:
                 writer.writerow([entry['child_id'], entry['parent_id'], entry['generation'], entry['birth_tick']])
+
+    def save_successful_population(self, path='checkpoint_successful.json', min_blocks=5):
+        successful_creatures = [
+            c for c in self.creatures if any(bt == 'incubadora' for bt, _, _, _ in c.genome.blocks) and
+            self.incubadora_wired(c) and len(c.genome.blocks) >= min_blocks
+        ]
+
+        if not successful_creatures:
+            print("No creatures met the criteria. Saving top 5 by block count instead.")
+            successful_creatures = sorted(self.creatures, key=lambda c: len(c.genome.blocks), reverse=True)[:5]
+
+        data = {
+            'metadata': {
+                'tick_count': self.tick_count,
+                'max_generation_ever': self.max_generation_ever
+            },
+            'genomes': [creature.genome.to_dict() for creature in successful_creatures]
+        }
+
+        with open(path, 'w') as file:
+            import json
+            json.dump(data, file)
 
     def save_population(self, path='checkpoint.json'):
         import json
