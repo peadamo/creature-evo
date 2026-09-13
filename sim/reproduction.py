@@ -18,7 +18,17 @@ class Reproduction:
 
     def mutate_genome(self, genome):
         new_genome = copy.deepcopy(genome)
-        
+
+        # Deriva leve de color hereditario, para poder rastrear linajes a
+        # simple vista - el color no es exacto de padre a hijo, pero tampoco
+        # cambia tanto como para perder el parecido de familia.
+        r, g, b = new_genome.color
+        new_genome.color = (
+            max(0, min(255, r + random.randint(-15, 15))),
+            max(0, min(255, g + random.randint(-15, 15))),
+            max(0, min(255, b + random.randint(-15, 15))),
+        )
+
         # Probabilidades de mutación
         mutation_probabilities = {
             'add_block': 0.2,

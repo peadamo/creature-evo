@@ -42,21 +42,13 @@ class Renderer:
             screen_x = int(x * scale_x)
             screen_y = int(y * scale_y)
             num_blocks = len(creature.genome.blocks)
-
-            # Convertir hue a RGB para colores más visibles
-            import colorsys
-            # 137.5 (ángulo áureo) evita que conteos de bloques comunes
-            # colisionen en el mismo color, a diferencia de un paso fijo
-            # como 30 (12 bloques exactos volvía a dar rojo, igual que 0).
-            hue = (num_blocks * 137.5) % 360 / 360.0
-            saturation = 1.0
-            value = 1.0
-            r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
-            color = (int(r * 255), int(g * 255), int(b * 255))
+            color = creature.genome.color  # rasgo hereditario, permite rastrear linajes a simple vista
 
             radius = 11
             pygame.draw.circle(self.screen, color, (screen_x, screen_y), radius)
-            label = self.block_count_font.render(str(num_blocks), True, (0, 0, 0))
+            brightness = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]
+            text_color = (0, 0, 0) if brightness > 140 else (255, 255, 255)
+            label = self.block_count_font.render(str(num_blocks), True, text_color)
             label_rect = label.get_rect(center=(screen_x, screen_y))
             self.screen.blit(label, label_rect)
 

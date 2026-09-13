@@ -4,6 +4,7 @@ class Genome:
     def __init__(self):
         self.blocks = []  # Lista de bloques (tipo, relative x,y, params)
         self.connections = []  # Lista de conexiones neuronales (origin, dest, weight, enabled)
+        self.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     @classmethod
     def random_initial(cls):
