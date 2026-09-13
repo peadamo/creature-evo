@@ -239,6 +239,12 @@ class World:
                             if nearest_victim.block_hp[(bt, bx, by)] <= 0:
                                 nearest_victim.remove_block(bt, bx, by)
                                 self.food_pellets.append({'x': nearest_victim.position[0], 'y': nearest_victim.position[1], 'amount': 15})
+                                # Sin bloques no hay cuerpo: quedaría como un
+                                # "fantasma" sin costo de mantenimiento que
+                                # nunca muere de inanición. Si el combate se
+                                # llevó todo, la criatura muere ahí mismo.
+                                if not nearest_victim.genome.blocks:
+                                    self.kill_creature(id(nearest_victim))
         
     def apply_generators(self):
         for creature in self.creatures:
