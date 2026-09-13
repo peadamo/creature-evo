@@ -42,8 +42,10 @@ class Reproduction:
             x, y = random.randint(0, 10), random.randint(0, 10)
             if block_type == 'generador':
                 params = {'output': 0.0}
-            elif block_type in ('boca', 'almacenamiento', 'casco'):
+            elif block_type in ('boca', 'casco'):
                 params = {}
+            elif block_type == 'almacenamiento':
+                params = {'reserva': 0.0}
             elif block_type == 'sonar':
                 params = {'dx': 0.0, 'dy': 0.0, 'dx_comida': 0.0, 'dy_comida': 0.0, 'activo': 0.0}
             elif block_type == 'incubadora':
