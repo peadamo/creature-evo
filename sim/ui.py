@@ -29,7 +29,7 @@ class ControlPanel:
             for i, slider in enumerate(self.sliders):
                 bar_x, bar_y = self._bar_pos(i)
                 handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
-                handle_rect = pygame.Rect(handle_x - 5, bar_y - 5, 10, 30)
+                handle_rect = pygame.Rect(handle_x - 12, bar_y - 5, 24, 30)
                 if handle_rect.collidepoint(event.pos):
                     self.dragging = slider
             if self.food_subsidy_button_rect.collidepoint(event.pos):
@@ -52,9 +52,20 @@ class ControlPanel:
             bar_x, bar_y = self._bar_pos(i)
             bar_rect = pygame.Rect(bar_x, bar_y, 200, 20)
             handle_x = int(bar_x + (slider['obj'].__dict__[slider['attr']] - slider['min']) / (slider['max'] - slider['min']) * 200)
-            handle_rect = pygame.Rect(handle_x - 5, bar_y - 5, 10, 30)
+
+            # Fondo del riel + relleno tenue hasta el valor actual (para que
+            # se note el rango recorrido sin que tape el pomo del handle).
+            pygame.draw.rect(screen, (60, 60, 60), bar_rect)
+            pygame.draw.rect(screen, (90, 90, 140), (bar_x, bar_y, handle_x, 20))
             pygame.draw.rect(screen, (255, 255, 255), bar_rect, 2)
-            pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, handle_x, 20))
+
+            # Pomo del slider: círculo bien visible con borde, claramente
+            # distinto del relleno - antes era el mismo rojo que el relleno
+            # y no se distinguía dónde agarrar para arrastrar.
+            knob_center = (bar_x + handle_x, bar_y + 10)
+            pygame.draw.circle(screen, (255, 60, 60), knob_center, 10)
+            pygame.draw.circle(screen, (255, 255, 255), knob_center, 10, 2)
+
             raw_value = slider['obj'].__dict__[slider['attr']]
             is_population_slider = slider['attr'] in ('min_population', 'max_population')
             label = f"{slider['label']}: {int(raw_value) if is_population_slider else round(raw_value, 2)}"
