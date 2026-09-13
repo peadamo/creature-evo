@@ -62,6 +62,12 @@ class World:
             })
         return creature
 
+    def fat_capacity(self, creature):
+        "Calculate the fat capacity of a creature based on its 'almacenamiento' blocks"
+        base_capacity = 20
+        storage_blocks_count = sum(1 for bt, _, _, _ in creature.genome.blocks if bt == 'almacenamiento')
+        return base_capacity + 50 * storage_blocks_count
+
     def kill_creature(self, creature_id):
         dying = next((c for c in self.creatures if id(c) == creature_id), None)
         if dying is not None:
@@ -356,13 +362,15 @@ class World:
                     # puede haber vaciado (o ya removido de food_pellets)
                     # este mismo pellet unos pasos antes en este mismo tick.
                     if nearest_pellet and nearest_pellet['amount'] > 0 and id(nearest_pellet) in live_pellet_ids:
-                        absorbed_amount = min(5, nearest_pellet['amount'])
-                        self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + absorbed_amount
-                        nearest_pellet['amount'] -= absorbed_amount
-                        self.food_absorbed_since_log += absorbed_amount
-                        if nearest_pellet['amount'] <= 0:
-                            self.food_pellets.remove(nearest_pellet)
-                            live_pellet_ids.discard(id(nearest_pellet))
+                        available_capacity = self.fat_capacity(creature) - self.fat_levels.get(id(creature), 0)
+                        absorbed_amount = min(5, nearest_pellet['amount'], available_capacity)
+                        if available_capacity > 0:
+                            self.fat_levels[id(creature)] = self.fat_levels.get(id(creature), 0) + absorbed_amount
+                            nearest_pellet['amount'] -= absorbed_amount
+                            self.food_absorbed_since_log += absorbed_amount
+                            if nearest_pellet['amount'] <= 0:
+                                self.food_pellets.remove(nearest_pellet)
+                                live_pellet_ids.discard(id(nearest_pellet))
 
     def tick(self):
         self.tick_count += 1
