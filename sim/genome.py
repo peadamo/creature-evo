@@ -47,6 +47,9 @@ class Genome:
             genome.add_block(block_type, x, y, make_params(block_type))
             io_blocks.append((block_type, x, y))
 
+        def bank_neuron():
+            return f"neuron_banco_neuronal_{bank_x}_{bank_y}_{random.randint(0, num_bank_neurons - 1)}"
+
         # Conectar cada bloque sensor/actuador/generador con una neurona aleatoria del banco,
         # para que haya señal fluyendo desde el arranque.
         for block_type, x, y in io_blocks:
@@ -54,11 +57,7 @@ class Genome:
                 continue  # sin neuronas propias, nada que conectar
             elif block_type == 'almacenamiento':
                 genome.add_connection(f'neuron_almacenamiento_{x}_{y}_reserva', bank_neuron(), random.uniform(-1.0, 1.0))
-
-            def bank_neuron():
-                return f"neuron_banco_neuronal_{bank_x}_{bank_y}_{random.randint(0, num_bank_neurons - 1)}"
-
-            if block_type == 'generador':
+            elif block_type == 'generador':
                 for _ in range(2):
                     genome.add_connection(bank_neuron(), f"neuron_generador_{x}_{y}_output", random.uniform(-1.0, 1.0))
             elif block_type == 'sonar':
