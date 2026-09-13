@@ -365,6 +365,12 @@ class World:
             cost = 0.0
             for block in creature.genome.blocks:
                 block_type, x, y, params = block
+                # Mantenimiento tisular mínimo: sin esto, tener el cuerpo sin
+                # cerebro (banco_neuronal destruido) salía gratis, y de hecho
+                # las criaturas "cerebro-muertas" vivían 4x más en promedio
+                # que las que conservan su cerebro - el sistema premiaba la
+                # ausencia de cognición. Todo bloque cuesta algo por existir.
+                cost += 0.1
                 if block_type == 'banco_neuronal':
                     num_neurons = params.get('num_neurons', 0)
                     cost += 0.5 * num_neurons
