@@ -134,7 +134,11 @@ Completado: panel de control visual (sliders población mín/máx, velocidad, ta
 
 **Hallazgo corregido tras revisión de código más profunda**: la corrida de 5000 ticks que en un principio pareció mostrar un ecosistema autosostenido (huevos reemplazando muertes sin relleno artificial) resultó ser en parte un artefacto de un bug real: `Energy.consume_energy` no restaba nada cuando la energía disponible era menor al costo, en vez de bajarla a 0 — las criaturas quedaban "congeladas" vivas con energía casi-cero para siempre, sin morir de inanición real. Eso generaba un falso ciclo estable. Ya corregido (commit `9cdf75c`).
 
-Con la muerte real funcionando, una corrida nueva de 5000 ticks muestra `eggs_hatched_per_20ticks = 0` durante toda la segunda mitad — la reproducción vía incubadora **no** está sosteniendo la población todavía, depende 100% del relleno artificial. No es un bug nuevo, es el estado real (antes oculto por el bug de congelamiento): la muerte ahora ocurre más rápido, dejando menos tiempo para acumular la grasa necesaria para invertir en un huevo antes de morir. Pendiente de decidir: ¿bajar el costo de invertir en el huevo, subir la tasa de mutación para que la incubadora se cablee más rápido, o es aceptable que la reproducción real sea rara al principio y solo mejore con más tiempo/generaciones?
+Con la muerte real funcionando, una corrida nueva de 5000 ticks muestra `eggs_hatched_per_20ticks = 0` durante toda la segunda mitad — la reproducción vía incubadora **no** está sosteniendo la población todavía, depende 100% del relleno artificial.
+
+**Segundo bug encontrado en la misma revisión**: `tick_incubadoras()` estaba definida pero **nunca se llamaba** desde `World.tick()` — el comentario decía "reproducción ahora sucede vía incubadora" pero faltaba la línea que efectivamente la invocaba. Los huevos jamás se pusieron en ninguna corrida anterior. Corregido (commit `56d2d85`).
+
+Tras el fix, `egg_count` sigue en 0 durante toda una corrida de 5000 ticks — no es un bug nuevo esta vez: `incubadora` no es un bloque garantizado al nacer (solo boca/generador/actuador/sonar lo son), y con `avg_blocks_per_creature` rondando 1.85-2.1 en esa corrida, la población no está desarrollando bloques extra más allá de los garantizados — probablemente ningún individuo llegó a tener `incubadora` en esa ventana. Es esperable dado lo poco que sobrevive cada generación; no se toca más por ahora, es cuestión de dejarlo correr más tiempo o considerar si conviene que `incubadora` también sea garantizado.
 
 Pendiente:
 
