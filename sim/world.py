@@ -288,7 +288,8 @@ class World:
 
             self.energy.consume_energy(id(creature), cost)
 
-        # Reproducción ahora sucede solo vía incubadora/huevos (tick_incubadoras)
+        # Reproducción ahora sucede solo vía incubadora/huevos
+        self.tick_incubadoras()
 
         # Actualizar energía y consumo
         for creature in self.creatures:
