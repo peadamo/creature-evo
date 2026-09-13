@@ -20,6 +20,7 @@ class World:
         self.energy = Energy()
         self.reproduction = Reproduction()
         self.tick_count = 0
+        self.lineage_log = []
         self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(60)]
         self.eggs = []
         self.creature_eggs = {}
@@ -37,7 +38,7 @@ class World:
         self.food_distance_sum_since_log = 0.0
         self.food_distance_samples_since_log = 0
 
-    def spawn_creature(self, genome, position=None, generation=0):
+    def spawn_creature(self, genome, position=None, generation=0, parent_id=None):
         creature = Creature(genome)
         self.creatures.append(creature)
         self.physics.add_creature(creature, position)
@@ -46,6 +47,13 @@ class World:
         self.birth_tick[id(creature)] = self.tick_count
         self.generation[id(creature)] = generation
         self.max_generation_ever = max(self.max_generation_ever, generation)
+        if parent_id is not None:
+            self.lineage_log.append({
+                'child_id': id(creature),
+                'parent_id': parent_id,
+                'generation': generation,
+                'birth_tick': self.tick_count
+            })
         return creature
 
     def kill_creature(self, creature_id):
@@ -218,6 +226,7 @@ class World:
                                 'progress': 0.0,
                                 'parent_genome': copy.deepcopy(creature.genome),
                                 'parent_generation': self.generation.get(id(creature), 0),
+                                'parent_id': id(creature),
                             }
                             self.eggs.append(egg)
                             self.creature_eggs[id(creature)] = egg
@@ -252,7 +261,7 @@ class World:
         for egg in self.eggs[:]:
             if egg['progress'] >= 1.0:
                 new_genome = self.reproduction.mutate_genome(egg['parent_genome'])
-                self.spawn_creature(new_genome, (egg['x'], egg['y']), generation=egg.get('parent_generation', 0) + 1)
+                self.spawn_creature(new_genome, (egg['x'], egg['y']), generation=egg.get('parent_generation', 0) + 1, parent_id=egg.get('parent_id'))
                 self.eggs.remove(egg)
                 owner_key = next((key for key, value in self.creature_eggs.items() if value == egg), None)
                 if owner_key is not None:
@@ -418,6 +427,16 @@ class World:
         if self.tick_count % 50 == 0 and len(self.food_pellets) < 40:
             for _ in range(15):
                 self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)})
+
+    def export_lineage_csv(self, path='lineage.csv'):
+        import csv
+
+        headers = ['child_id', 'parent_id', 'generation', 'birth_tick']
+        with open(path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            for entry in self.lineage_log:
+                writer.writerow([entry['child_id'], entry['parent_id'], entry['generation'], entry['birth_tick']])
 
     def run(self, num_ticks):
         for _ in range(num_ticks):
