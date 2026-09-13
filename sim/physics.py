@@ -31,8 +31,8 @@ class Physics:
                 impulso = creature.neurons.get(f"neuron_actuador_{bx}_{by}_impulso", 0.0)
                 impulso = max(0.0, min(1.0, impulso))
                 direccion = params.get('direccion', 0.0)
-                thrust_x += impulso * math.cos(direccion) * 0.3
-                thrust_y += impulso * math.sin(direccion) * 0.3
+                thrust_x += impulso * math.cos(direccion) * 1.2
+                thrust_y += impulso * math.sin(direccion) * 1.2
 
             vx, vy = self.velocities.get(id(creature), (0.0, 0.0))
             vx = (vx + thrust_x) * 0.85

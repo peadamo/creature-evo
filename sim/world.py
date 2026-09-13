@@ -17,7 +17,7 @@ class World:
         self.energy = Energy()
         self.reproduction = Reproduction()
         self.tick_count = 0
-        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(30)]
+        self.food_pellets = [{'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)} for _ in range(60)]
         self.eggs = []
         self.creature_eggs = {}
         self.fat_levels = {}
@@ -48,6 +48,10 @@ class World:
             had_brain = any(bt == 'banco_neuronal' for bt, _, _, _ in dying.genome.blocks)
             cause = 'starvation' if had_brain else 'starvation_brain_dead'
             self.death_causes_since_log[cause] = self.death_causes_since_log.get(cause, 0) + 1
+
+            # El cadáver se descompone en comida, igual que un bloque destruido en combate.
+            body_food = max(15, len(dying.genome.blocks) * 8)
+            self.food_pellets.append({'x': dying.position[0], 'y': dying.position[1], 'amount': body_food})
 
         self.creatures = [c for c in self.creatures if id(c) != creature_id]
         self.physics.creatures = [c for c in self.physics.creatures if id(c) != creature_id]
@@ -347,8 +351,8 @@ class World:
         if self.tick_count % 20 == 0:
             self.log_summary()
 
-        if self.tick_count % 200 == 0 and len(self.food_pellets) < 10:
-            for _ in range(10):
+        if self.tick_count % 50 == 0 and len(self.food_pellets) < 40:
+            for _ in range(15):
                 self.food_pellets.append({'x': random.uniform(0, self.physics.grid_size[0]), 'y': random.uniform(0, self.physics.grid_size[1]), 'amount': random.uniform(10, 100)})
 
     def run(self, num_ticks):
